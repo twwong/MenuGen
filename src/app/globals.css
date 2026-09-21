@@ -1,0 +1,52 @@
+@import "tailwindcss";
+
+:root {
+  --palette-rice-paper: #f7f3e8;
+  --palette-menu-paper: #fffdf7;
+  --palette-ink: #231f18;
+  --palette-ink-muted: #665f54;
+  --palette-shiso: #315b45;
+  --palette-shiso-dark: #244735;
+  --palette-persimmon: #d85c35;
+  --palette-broth: #e7d9be;
+}
+
+@theme inline {
+  --color-background: var(--palette-rice-paper);
+  --color-foreground: var(--palette-ink);
+  --color-rice-paper: var(--palette-rice-paper);
+  --color-menu-paper: var(--palette-menu-paper);
+  --color-ink: var(--palette-ink);
+  --color-ink-muted: var(--palette-ink-muted);
+  --color-shiso: var(--palette-shiso);
+  --color-shiso-dark: var(--palette-shiso-dark);
+  --color-persimmon: var(--palette-persimmon);
+  --color-broth: var(--palette-broth);
+  --font-sans: Arial, Helvetica, sans-serif;
+  --font-serif: Georgia, "Times New Roman", serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  min-width: 320px;
+  background: var(--palette-rice-paper);
+  color: var(--palette-ink);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+::selection {
+  background: var(--palette-broth);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
