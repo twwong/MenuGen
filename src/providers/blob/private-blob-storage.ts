@@ -13,7 +13,7 @@ export class PrivateBlobStorage implements ObjectStorage {
       token: this.token,
       contentType: input.mimeType,
       addRandomSuffix: false,
-      allowOverwrite: false,
+      allowOverwrite: true,
     });
     return {
       key: blob.url,

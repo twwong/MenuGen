@@ -31,13 +31,16 @@ export async function runMenuPipeline(options: {
   provider: AiProviderSuite;
   input: MenuSourceInput;
   targetLanguage: TargetLanguage;
+  inputAlreadyModerated?: boolean;
 }): Promise<MenuPipelineResult> {
   const stages: ProviderMetadata[] = [];
 
-  const moderation = await options.provider.moderateInput(options.input);
-  stages.push(providerMetadataSchema.parse(moderation.metadata));
-  if (moderation.data.decision !== "allowed") {
-    throw new Error(`Menu input was ${moderation.data.decision}`);
+  if (!options.inputAlreadyModerated) {
+    const moderation = await options.provider.moderateInput(options.input);
+    stages.push(providerMetadataSchema.parse(moderation.metadata));
+    if (moderation.data.decision !== "allowed") {
+      throw new Error(`Menu input was ${moderation.data.decision}`);
+    }
   }
 
   const extraction = await options.provider.extractMenu(options.input);

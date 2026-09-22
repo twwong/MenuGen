@@ -3,7 +3,10 @@
 import { useRouter } from "next/navigation";
 import { useRef, useState, useTransition } from "react";
 
-import { createDraftAction } from "@/app/create/actions";
+import {
+  beginManagedUploadAction,
+  createDraftAction,
+} from "@/app/create/actions";
 import type { TargetLanguage } from "@/domain/menu/menu-extraction";
 
 const languageOptions: ReadonlyArray<{ value: TargetLanguage; label: string }> =
@@ -15,7 +18,13 @@ const languageOptions: ReadonlyArray<{ value: TargetLanguage; label: string }> =
     { value: "zh-CN", label: "Simplified Chinese" },
   ];
 
-export function UploadForm({ enabled }: { enabled: boolean }) {
+export function UploadForm({
+  enabled,
+  backend,
+}: {
+  enabled: boolean;
+  backend: "fixture" | "managed";
+}) {
   const router = useRouter();
   const errorRef = useRef<HTMLDivElement>(null);
   const [files, setFiles] = useState<File[]>([]);
@@ -52,15 +61,18 @@ export function UploadForm({ enabled }: { enabled: boolean }) {
     setError(null);
     startTransition(async () => {
       try {
-        await measureFiles(files, setProgress);
-        const result = await createDraftAction({
+        const input = {
           targetLanguage,
           files: files.map((file) => ({
             name: file.name,
             size: file.size,
             type: file.type,
           })),
-        });
+        };
+        const result =
+          backend === "managed"
+            ? await uploadManagedFiles(files, input, setProgress)
+            : await createFixture(files, input, setProgress);
         router.push(`/create/${result.menuId}/processing`);
       } catch (caught) {
         const message =
@@ -241,6 +253,67 @@ export function UploadForm({ enabled }: { enabled: boolean }) {
       </aside>
     </div>
   );
+}
+
+async function createFixture(
+  files: readonly File[],
+  input: Parameters<typeof beginManagedUploadAction>[0],
+  update: (value: number) => void,
+) {
+  await measureFiles(files, update);
+  return createDraftAction(input);
+}
+
+async function uploadManagedFiles(
+  files: readonly File[],
+  input: Parameters<typeof beginManagedUploadAction>[0],
+  update: (value: number) => void,
+) {
+  const signed = await beginManagedUploadAction(input);
+  const [{ default: Uppy }, { default: Transloadit }] = await Promise.all([
+    import("@uppy/core"),
+    import("@uppy/transloadit"),
+  ]);
+  const uppy = new Uppy({
+    autoProceed: false,
+    restrictions: {
+      maxNumberOfFiles: 10,
+      maxFileSize: 20 * 1024 * 1024,
+      maxTotalFileSize: 50 * 1024 * 1024,
+      allowedFileTypes: [
+        "application/pdf",
+        "image/jpeg",
+        "image/png",
+        "image/heic",
+        "image/heif",
+      ],
+    },
+  });
+  uppy.use(Transloadit, {
+    assemblyOptions: {
+      params: signed.params,
+      signature: signed.signature,
+    },
+    waitForEncoding: true,
+    retryDelays: [],
+  });
+  uppy.on("progress", update);
+  for (const file of files) {
+    uppy.addFile({
+      name: file.name,
+      type: file.type,
+      data: file,
+      source: "menu-file-input",
+    });
+  }
+  try {
+    const result = await uppy.upload();
+    if (result?.failed?.length) throw new Error("managed_upload_failed");
+    update(100);
+    return { menuId: signed.menuId };
+  } finally {
+    uppy.destroy();
+  }
 }
 
 async function measureFiles(

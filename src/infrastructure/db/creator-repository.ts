@@ -11,6 +11,7 @@ import type {
   SafeMenuSummary,
 } from "@/application/contracts";
 import { hashAnonymousOwnershipToken } from "@/application/ownership";
+import { collectReviewIssues } from "@/application/review-issues";
 import { summarizeRollingQuota } from "@/domain/creator/quota";
 import {
   createRevisedDraft,
@@ -20,11 +21,28 @@ import { assertMenuTransition, menuStateSchema } from "@/domain/creator/state";
 import { targetLanguageSchema } from "@/domain/menu/menu-extraction";
 import { getDatabase } from "@/infrastructure/db/client";
 import {
+  creatorUsers,
   menuItems,
   menuRevisions,
   menus,
   quotaLedger,
 } from "@/infrastructure/db/schema";
+
+export async function ensureCreatorUser(input: {
+  clerkUserId: string;
+  email: string | null;
+}): Promise<{ id: string }> {
+  const [user] = await getDatabase()
+    .insert(creatorUsers)
+    .values({ clerkUserId: input.clerkUserId, email: input.email })
+    .onConflictDoUpdate({
+      target: creatorUsers.clerkUserId,
+      set: { email: input.email, updatedAt: new Date() },
+    })
+    .returning({ id: creatorUsers.id });
+  if (!user) throw new Error("creator_user_upsert_failed");
+  return user;
+}
 
 export class NeonCreatorRepository implements CreatorRepository {
   async createAnonymousMenu(
@@ -176,7 +194,10 @@ export class NeonCreatorRepository implements CreatorRepository {
   ) {
     return getDatabase().transaction(async (transaction) => {
       const [owned] = await transaction
-        .select({ currentRevisionId: menus.currentRevisionId })
+        .select({
+          currentRevisionId: menus.currentRevisionId,
+          state: menus.state,
+        })
         .from(menus)
         .where(and(eq(menus.id, input.menuId), ownershipCondition(input.actor)))
         .for("update")
@@ -184,6 +205,7 @@ export class NeonCreatorRepository implements CreatorRepository {
       if (!owned || owned.currentRevisionId !== input.previousRevisionId) {
         throw new Error("revision_conflict");
       }
+      if (owned.state !== "review_ready") throw new Error("menu_not_editable");
 
       const [previousRow] = await transaction
         .select({ snapshot: menuRevisions.snapshot })
@@ -295,25 +317,5 @@ function toSummary(
 function countReviewIssues(
   revision: ReturnType<typeof menuDraftV1Schema.parse> | null,
 ) {
-  if (!revision) return 0;
-  let issues = 0;
-  for (const section of revision.menu.sections) {
-    if (section.title.needsReview) issues += 1;
-    for (const item of section.items) {
-      if (item.name.needsReview) issues += 1;
-      if (item.description?.needsReview) issues += 1;
-      if (item.price?.needsReview) issues += 1;
-      if (item.imageEligibility === "needs_review") issues += 1;
-    }
-  }
-  for (const candidate of revision.menu.sourcePhotoCandidates) {
-    if (
-      candidate.region.needsReview ||
-      candidate.association.needsReview ||
-      candidate.usability.needsReview
-    ) {
-      issues += 1;
-    }
-  }
-  return issues;
+  return revision ? collectReviewIssues(revision).length : 0;
 }

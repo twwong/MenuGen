@@ -17,6 +17,8 @@ Model output, user corrections, asynchronous item work, ownership, and quota acc
 - Enforce creator ownership in the data access layer and return allowlisted safe DTOs.
 - A menu has exactly one owner: either an anonymous token hash or a user, never both.
 
+The committed Drizzle migrations implement these boundaries. Managed repository writes use database transactions for claim, revision, quota, attempt, outbox, and deletion state changes; no migration has been applied to a remote database yet.
+
 ## Consequences
 
 Jobs can pin a revision while later corrections remain a separate immutable record. Relational rows make item progress and idempotency keys queryable without duplicating full menu content. JSON revisions require runtime schema validation on every read and write; database shape alone is not enough.

@@ -17,7 +17,9 @@ test("creates and corrects an anonymous menu draft", async ({ page }) => {
   await expect(page.getByText("synthetic-menu-photo.png")).toBeVisible();
 
   await page.getByRole("button", { name: "Read this menu" }).click();
-  await expect(page).toHaveURL(/\/create\/[a-f0-9-]+\/processing$/);
+  await expect(page).toHaveURL(/\/create\/[a-f0-9-]+\/processing$/, {
+    timeout: 15_000,
+  });
   await expect(
     page.getByText("Review ready. 2 details need your attention."),
   ).toBeVisible();

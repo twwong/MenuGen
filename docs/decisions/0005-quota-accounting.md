@@ -17,6 +17,8 @@ A signed-in user receives three menu-generation credits in a rolling 30-day wind
 - Active reservations reduce available credits. The rolling reset begins at consumption time.
 - Source-photo-only menus and extraction failures create no consumption entry.
 
+The managed repository locks the creator and menu rows during confirmation, uses unique reservation/consumption/release keys, and records consumption in the same transaction that marks the first provider request as started. Provisioned concurrency tests are still required.
+
 ## Consequences
 
 Quota state is reconstructable instead of being a mutable counter. The application can explain remaining credits and the next reset date. Reservations need cleanup and monitoring so abandoned runs do not suppress a credit forever.

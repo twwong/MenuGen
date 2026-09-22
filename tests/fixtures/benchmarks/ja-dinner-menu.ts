@@ -183,6 +183,7 @@ export const japaneseDinnerBenchmark: MenuBenchmarkCase = {
     },
     costUsd: {
       moderate_input: 0.0001,
+      assess_preflight: 0,
       extract_menu: 0.012,
       translate_menu: 0.004,
       generate_dish_image: 0.035,

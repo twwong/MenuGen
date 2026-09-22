@@ -17,7 +17,7 @@ export default function CreatePage() {
           <span aria-hidden="true" /> Private creator preview
         </p>
       </header>
-      <UploadForm enabled={enabled} />
+      <UploadForm backend={environment.CREATOR_BACKEND} enabled={enabled} />
       <footer className="creator-footer">
         <p>Sources are temporary. Result assets expire after 30 days.</p>
         <p>

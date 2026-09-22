@@ -1,13 +1,24 @@
 import Link from "next/link";
 
 import { DashboardMenus } from "@/app/create/dashboard/dashboard-menus";
-import { getFixtureCreatorActor } from "@/app/create/session";
+import { getCreatorActor } from "@/app/create/session";
+import { readCreatorEnvironment } from "@/config/env";
+import { NeonCreatorRepository } from "@/infrastructure/db/creator-repository";
 import { getFixtureDashboard } from "@/providers/fixture/fixture-creator-store";
 
 export default async function CreatorDashboardPage() {
-  const actor = await getFixtureCreatorActor();
+  const backend = readCreatorEnvironment().CREATOR_BACKEND;
+  const actor = await getCreatorActor();
   const dashboard = actor.userId
-    ? getFixtureDashboard({ userId: actor.userId })
+    ? backend === "managed"
+      ? {
+          menus: await new NeonCreatorRepository().listOwnedMenus(actor),
+          quota: await new NeonCreatorRepository().getQuotaSummary(
+            actor.userId,
+            new Date(),
+          ),
+        }
+      : getFixtureDashboard({ userId: actor.userId })
     : null;
 
   return (
@@ -57,7 +68,7 @@ export default async function CreatorDashboardPage() {
               Create another menu
             </Link>
           </section>
-          <DashboardMenus menus={dashboard.menus} />
+          <DashboardMenus backend={backend} menus={dashboard.menus} />
         </div>
       )}
     </main>

@@ -55,13 +55,18 @@ export function ProcessingStatus({
   menuId,
   initialState,
   initialIssueCount,
+  initialPreflightGuidance,
 }: {
   menuId: string;
   initialState: CreatorState;
   initialIssueCount: number;
+  initialPreflightGuidance: readonly string[];
 }) {
   const [state, setState] = useState(initialState);
   const [issueCount, setIssueCount] = useState(initialIssueCount);
+  const [preflightGuidance, setPreflightGuidance] = useState(
+    initialPreflightGuidance,
+  );
 
   useEffect(() => {
     if (
@@ -85,9 +90,11 @@ export function ProcessingStatus({
         const update = (await response.json()) as {
           state: CreatorState;
           issueCount: number;
+          preflightGuidance?: string[];
         };
         setState(update.state);
         setIssueCount(update.issueCount);
+        setPreflightGuidance(update.preflightGuidance ?? []);
       }
       if (!cancelled) {
         timer = setTimeout(
@@ -140,10 +147,26 @@ export function ProcessingStatus({
         </ol>
 
         <div aria-live="polite" className="processing-announcement">
-          {readyForReview
-            ? `Review ready. ${issueCount} details need your attention.`
-            : "Processing continues. This status checks every few seconds."}
+          {state === "failed"
+            ? "These pages are not reliable enough to extract safely. No menu facts were guessed."
+            : readyForReview
+              ? `Review ready. ${issueCount} details need your attention.`
+              : "Processing continues. This status checks every few seconds."}
         </div>
+
+        {state === "failed" && preflightGuidance.length > 0 ? (
+          <div className="preflight-guidance">
+            <h2>Try these recapture fixes</h2>
+            <ul>
+              {[...new Set(preflightGuidance)].map((guidance) => (
+                <li key={guidance}>{guidance}</li>
+              ))}
+            </ul>
+            <Link className="primary-button" href="/create">
+              Retake menu pages
+            </Link>
+          </div>
+        ) : null}
 
         {readyForReview ? (
           <Link

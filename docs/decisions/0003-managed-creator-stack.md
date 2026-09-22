@@ -21,6 +21,8 @@ Milestone 2 needs private uploads, durable processing, authentication, rate limi
 
 All adapters are feature-gated. No account or remote resource is created by committing this decision; provisioning needs explicit approval for each external action.
 
+The local implementation now has concrete adapters and workflow entry points for every selected service. This does not validate vendor configuration or regional placement; those remain protected-preview checks.
+
 ## Consequences
 
 The stack minimizes bespoke operations and keeps vendor types outside domain code. It also creates a real integration surface: signed Transloadit callbacks, private Blob delivery, Clerk claim races, Neon transactions, Workflow retries, and Resend idempotency must all pass protected-preview tests before the flag can be enabled publicly.

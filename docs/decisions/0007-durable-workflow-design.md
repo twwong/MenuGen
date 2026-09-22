@@ -18,6 +18,8 @@ Extraction, generation, cleanup, and expiration outlive browser requests. Work c
 - Reserve estimated spend before each provider call. Warn at `$1.50` and refuse new provider calls once conservative reservations would exceed `$2.00`.
 - Poll creator status every two seconds while visible, back off while idle, and stop at terminal state.
 
+The implementation compiles to seven workflows and nineteen steps. Paid image work uses a database claim before entering a provider step; ambiguous lost responses are treated as item failures instead of risking an automatic second paid call.
+
 ## Consequences
 
 The database remains the product source of truth; Workflow is the durable executor. Steps may run more than once, so an apparently successful external side effect with a lost response must still be safe to replay. Paid smoke tests stay manual and require explicit approval.

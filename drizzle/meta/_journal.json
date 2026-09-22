@@ -15,6 +15,13 @@
       "when": 1790048494542,
       "tag": "0001_slim_patch",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790052190313,
+      "tag": "0002_lumpy_microchip",
+      "breakpoints": true
     }
   ]
 }

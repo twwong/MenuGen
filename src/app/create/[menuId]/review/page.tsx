@@ -2,19 +2,14 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
 import { ReviewWorkspace } from "@/app/create/[menuId]/review/review-workspace";
-import { getFixtureCreatorActor } from "@/app/create/session";
+import { getOwnedCreatorMenu } from "@/application/creator-read-service";
 import { collectReviewIssues } from "@/application/review-issues";
-import { getOwnedFixtureMenu } from "@/providers/fixture/fixture-creator-store";
 
 export default async function ReviewPage(
   props: PageProps<"/create/[menuId]/review">,
 ) {
   const { menuId } = await props.params;
-  const actor = await getFixtureCreatorActor();
-  const menu = getOwnedFixtureMenu({
-    menuId,
-    ...actor,
-  });
+  const menu = await getOwnedCreatorMenu(menuId);
   if (!menu?.currentRevision) notFound();
   if (menu.state === "generation_ready") redirect(`/create/${menuId}/generate`);
   if (menu.state !== "review_ready") redirect(`/create/${menuId}/processing`);

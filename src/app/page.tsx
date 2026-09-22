@@ -8,8 +8,8 @@ const steps = [
     body: "Questionable text and translations are flagged so you can fix exceptions instead of checking everything.",
   },
   {
-    title: "Browse and share",
-    body: "Explore a bilingual visual menu, then share its private link with the table.",
+    title: "Generate and return",
+    body: "Create labeled visual estimates, leave while they run, and return to the private result from your dashboard.",
   },
 ];
 
@@ -126,7 +126,7 @@ export default function Home() {
               <p className="text-ink-muted mt-5 max-w-md leading-7">
                 The extraction benchmark is complete. The private creator flow
                 now focuses your attention on uncertain details before any
-                images are generated.
+                images are generated. Public sharing comes later.
               </p>
             </div>
             <ol className="border-ink/30 border-t">

@@ -16,6 +16,7 @@ import {
 } from "drizzle-orm/pg-core";
 
 import type { MenuDraftV1 } from "@/domain/creator/revisions";
+import type { PreflightAssessmentV1 } from "@/domain/creator/preflight";
 
 const timestamps = {
   createdAt: timestamp("created_at", { withTimezone: true })
@@ -126,7 +127,22 @@ export const menus = pgTable(
     state: menuStateEnum("state").default("uploading").notNull(),
     currentRevisionId: uuid("current_revision_id"),
     generationRevisionId: uuid("generation_revision_id"),
+    extractionWorkflowRunId: text("extraction_workflow_run_id"),
     generationWorkflowRunId: text("generation_workflow_run_id"),
+    sourceCleanupWorkflowRunId: text("source_cleanup_workflow_run_id"),
+    resultExpirationWorkflowRunId: text("result_expiration_workflow_run_id"),
+    sourceDeletionCompletedAt: timestamp("source_deletion_completed_at", {
+      withTimezone: true,
+    }),
+    preflightAssessment: jsonb(
+      "preflight_assessment",
+    ).$type<PreflightAssessmentV1>(),
+    estimatedCostUsd: numeric("estimated_cost_usd", {
+      precision: 10,
+      scale: 6,
+    })
+      .default("0")
+      .notNull(),
     resultExpiresAt: timestamp("result_expires_at", { withTimezone: true }),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
     ...timestamps,
@@ -196,6 +212,7 @@ export const menuRevisions = pgTable(
 export const menuItems = pgTable(
   "menu_items",
   {
+    publicId: uuid("public_id").defaultRandom().notNull(),
     menuId: uuid("menu_id")
       .notNull()
       .references(() => menus.id, { onDelete: "cascade" }),
@@ -209,6 +226,7 @@ export const menuItems = pgTable(
   },
   (table) => [
     primaryKey({ columns: [table.menuId, table.itemId] }),
+    uniqueIndex("menu_items_public_id_uq").on(table.publicId),
     index("menu_items_state_idx").on(table.menuId, table.state),
   ],
 );
@@ -227,11 +245,14 @@ export const assets = pgTable(
     mimeType: text("mime_type").notNull(),
     byteSize: integer("byte_size").notNull(),
     sourceCandidateId: text("source_candidate_id"),
+    sourceFileOrder: integer("source_file_order"),
+    pageIndex: integer("page_index"),
     expiresAt: timestamp("expires_at", { withTimezone: true }),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
     ...timestamps,
   },
   (table) => [
+    uniqueIndex("assets_object_key_uq").on(table.objectKey),
     index("assets_menu_kind_idx").on(table.menuId, table.kind),
     index("assets_expiry_idx").on(table.expiresAt),
   ],
@@ -245,6 +266,7 @@ export const jobs = pgTable(
       .notNull()
       .references(() => menus.id, { onDelete: "cascade" }),
     kind: text("kind").notNull(),
+    businessKey: text("business_key").notNull(),
     state: jobStateEnum("state").default("queued").notNull(),
     workflowRunId: text("workflow_run_id"),
     attemptCount: integer("attempt_count").default(0).notNull(),
@@ -253,7 +275,10 @@ export const jobs = pgTable(
     finishedAt: timestamp("finished_at", { withTimezone: true }),
     ...timestamps,
   },
-  (table) => [index("jobs_menu_state_idx").on(table.menuId, table.state)],
+  (table) => [
+    uniqueIndex("jobs_business_key_uq").on(table.businessKey),
+    index("jobs_menu_state_idx").on(table.menuId, table.state),
+  ],
 );
 
 export const generationAttempts = pgTable(
@@ -267,6 +292,7 @@ export const generationAttempts = pgTable(
     revisionId: uuid("revision_id").notNull(),
     requestKey: text("request_key").notNull(),
     attemptNumber: integer("attempt_number").notNull(),
+    regenerationSequence: integer("regeneration_sequence").default(0).notNull(),
     requestedBy: generationRequestedByEnum("requested_by").notNull(),
     state: generationAttemptStateEnum("state").notNull(),
     provider: text("provider").notNull(),
@@ -297,9 +323,9 @@ export const quotaLedger = pgTable(
     userId: uuid("user_id")
       .notNull()
       .references(() => creatorUsers.id, { onDelete: "cascade" }),
-    menuId: uuid("menu_id")
-      .notNull()
-      .references(() => menus.id, { onDelete: "cascade" }),
+    // Intentionally not a foreign key: deleting menu content must never erase
+    // the append-only credit history and silently restore a consumed credit.
+    menuId: uuid("menu_id").notNull(),
     reservationId: uuid("reservation_id").notNull(),
     kind: quotaEntryKindEnum("kind").notNull(),
     amount: integer("amount").notNull(),
@@ -365,6 +391,8 @@ export const deletionAudits = pgTable(
   {
     id: uuid("id").defaultRandom().primaryKey(),
     menuId: uuid("menu_id").notNull(),
+    ownerUserId: uuid("owner_user_id"),
+    businessKey: text("business_key").notNull(),
     reason: text("reason").notNull(),
     assetKind: assetKindEnum("asset_kind").notNull(),
     outcome: text("outcome").notNull(),
@@ -375,5 +403,8 @@ export const deletionAudits = pgTable(
     retainUntil: timestamp("retain_until", { withTimezone: true }).notNull(),
     contentFree: boolean("content_free").default(true).notNull(),
   },
-  (table) => [index("deletion_audits_retention_idx").on(table.retainUntil)],
+  (table) => [
+    uniqueIndex("deletion_audits_business_key_uq").on(table.businessKey),
+    index("deletion_audits_retention_idx").on(table.retainUntil),
+  ],
 );

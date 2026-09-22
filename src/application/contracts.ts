@@ -91,6 +91,7 @@ export interface ObjectStorage {
 }
 
 export interface ScannedUpload {
+  menuId: string;
   assemblyId: string;
   files: ReadonlyArray<{
     sourceFileOrder: number;

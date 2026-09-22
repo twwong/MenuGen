@@ -2,7 +2,7 @@
 
 MenuGen turns menu photos or PDFs into translated, mobile-friendly visual menus while preserving source text, prices, uncertainty, and image provenance.
 
-Milestone 1 is complete. Milestone 2 is in progress. The deterministic creator proof now covers upload, exception-only review, anonymous draft claiming, rolling credits, source-photo reuse, partial generation failure, uploader regeneration, a resumable dashboard, private results, one-time completion events, and idempotent deletion/expiry. Managed ingestion and durable production workflows still need provisioned development services. The creator workflow remains disabled in public production until the protected preview passes acceptance testing. See `prd.md` for the product requirements and `docs/implementation-plan.md` for delivery order.
+Milestone 1 is complete. Milestone 2 is in progress. The deterministic creator proof covers the full private journey. The managed path is also wired for Clerk, Neon, private Blob stores, Transloadit, Vercel Workflow, Upstash, Resend, and OpenAI, but those integrations have not been provisioned or exercised against development services yet. The creator workflow remains disabled in public production until the protected preview passes acceptance testing. See `prd.md` for the product requirements and `docs/implementation-plan.md` for delivery order.
 
 ## Local development
 
@@ -27,6 +27,11 @@ directory so navigation and browser reloads work. It is never used when
 `CREATOR_BACKEND=managed`. Its preview sign-in is deliberately local: it proves
 the claim and quota boundaries without contacting Clerk or a paid image
 provider.
+
+The managed backend is intentionally not a one-variable switch. It needs the
+approved development resources and secrets listed in `.env.example`, committed
+Drizzle migrations applied to the selected Neon database, and the protected
+preview checks in `docs/managed-preview.md`.
 
 ## Checks
 
@@ -79,4 +84,5 @@ pnpm test:e2e
 - `AGENTS.md`: Repository guidance for coding agents
 - `docs/implementation-plan.md`: Milestones and initial backlog
 - `docs/benchmark.md`: Benchmark structure, guarantees, and limitations
+- `docs/managed-preview.md`: Provisioning order and protected-preview checks
 - `docs/decisions/`: Architecture decision records

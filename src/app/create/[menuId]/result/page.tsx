@@ -1,19 +1,68 @@
 import Link from "next/link";
+import Image from "next/image";
 import { notFound, redirect } from "next/navigation";
 
-import { getFixtureCreatorActor } from "@/app/create/session";
+import {
+  getFixtureCreatorActor,
+  getManagedCreatorActor,
+} from "@/app/create/session";
+import { readCreatorEnvironment } from "@/config/env";
+import { NeonGenerationRepository } from "@/infrastructure/db/generation-repository";
 import { getFixtureGenerationView } from "@/providers/fixture/fixture-creator-store";
 
 export default async function CreatorResultPage(
   props: PageProps<"/create/[menuId]/result">,
 ) {
   const { menuId } = await props.params;
-  const actor = await getFixtureCreatorActor();
-  const view = getFixtureGenerationView({ menuId, ...actor });
+  const backend = readCreatorEnvironment().CREATOR_BACKEND;
+  const actor =
+    backend === "managed"
+      ? await getManagedCreatorActor()
+      : await getFixtureCreatorActor();
+  if (backend === "managed" && !actor.userId) {
+    redirect(`/sign-in?returnTo=/create/${menuId}/result`);
+  }
+  const fixtureView =
+    backend === "fixture"
+      ? getFixtureGenerationView({ menuId, ...actor })
+      : null;
+  const managedView =
+    backend === "managed" && actor.userId
+      ? await new NeonGenerationRepository().getOwnedGenerationView({
+          menuId,
+          userId: actor.userId,
+        })
+      : null;
+  const view = fixtureView ?? managedView;
   if (!view?.menu.currentRevision) notFound();
   if (view.menu.state !== "ready") redirect(`/create/${menuId}/generate`);
 
-  const itemState = new Map(view.items.map((item) => [item.itemId, item]));
+  const itemState = new Map<
+    string,
+    {
+      provenance: "source" | "generated" | "unavailable" | null;
+      activeAssetId: string | null;
+    }
+  >(
+    fixtureView
+      ? fixtureView.items.map(
+          (item) =>
+            [
+              item.itemId,
+              { provenance: item.provenance, activeAssetId: null },
+            ] as const,
+        )
+      : (managedView?.items.map(
+          (item) =>
+            [
+              item.internalItemId,
+              {
+                provenance: item.provenance,
+                activeAssetId: item.activeAssetId,
+              },
+            ] as const,
+        ) ?? []),
+  );
   const menu = view.menu.currentRevision.menu;
 
   return (
@@ -57,7 +106,18 @@ export default async function CreatorResultPage(
                     <div
                       className={`generation-card__image generation-card__image--${status?.provenance ?? "pending"}`}
                     >
-                      <span aria-hidden="true" />
+                      {status?.activeAssetId ? (
+                        <Image
+                          alt={`Visual for ${item.name.translatedText}`}
+                          fill
+                          sizes="(min-width: 40rem) 40vw, 100vw"
+                          src={`/api/creator/assets/${status.activeAssetId}`}
+                          style={{ objectFit: "cover" }}
+                          unoptimized
+                        />
+                      ) : (
+                        <span aria-hidden="true" />
+                      )}
                       <small>
                         {status?.provenance === "source"
                           ? "Source menu image"

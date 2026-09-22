@@ -7,7 +7,9 @@ import { useEffect, useState, useTransition } from "react";
 import {
   claimFixtureDraftAction,
   confirmFixtureGenerationAction,
+  confirmManagedGenerationAction,
   regenerateFixtureItemAction,
+  regenerateManagedItemAction,
 } from "@/app/create/actions";
 
 type MenuState =
@@ -54,11 +56,13 @@ interface GenerationView {
 
 export function GenerationWorkspace({
   menuId,
+  backend,
   signedIn,
   itemNames,
   initialView,
 }: {
   menuId: string;
+  backend: "fixture" | "managed";
   signedIn: boolean;
   itemNames: Record<string, { translated: string; source: string }>;
   initialView: GenerationView;
@@ -121,14 +125,23 @@ export function GenerationWorkspace({
           generation credit.
         </p>
         {error ? <p className="form-error">{error}</p> : null}
-        <button
-          className="primary-button"
-          disabled={isPending}
-          onClick={() => run(() => claimFixtureDraftAction(menuId))}
-          type="button"
-        >
-          {isPending ? "Claiming draft…" : "Continue as preview diner"}
-        </button>
+        {backend === "managed" ? (
+          <Link
+            className="primary-button"
+            href={`/sign-in?returnTo=/create/${menuId}/claim`}
+          >
+            Sign in with email or Google
+          </Link>
+        ) : (
+          <button
+            className="primary-button"
+            disabled={isPending}
+            onClick={() => run(() => claimFixtureDraftAction(menuId))}
+            type="button"
+          >
+            {isPending ? "Claiming draft…" : "Continue as preview diner"}
+          </button>
+        )}
         <p className="preview-lock">
           The anonymous ownership token is invalidated after the claim.
         </p>
@@ -179,6 +192,13 @@ export function GenerationWorkspace({
           </div>
         </dl>
 
+        {view.estimatedCostUsd >= 1.5 ? (
+          <p className="cost-warning">
+            This menu has reached the $1.50 cost warning. New provider calls
+            stop before the $2.00 hard ceiling.
+          </p>
+        ) : null}
+
         {view.state === "generation_ready" ? (
           <div className="generation-confirmation">
             <h2>Confirm one menu credit</h2>
@@ -191,7 +211,13 @@ export function GenerationWorkspace({
             <button
               className="primary-button"
               disabled={isPending || (quota?.remaining ?? 0) < 1}
-              onClick={() => run(() => confirmFixtureGenerationAction(menuId))}
+              onClick={() =>
+                run(() =>
+                  backend === "managed"
+                    ? confirmManagedGenerationAction(menuId)
+                    : confirmFixtureGenerationAction(menuId),
+                )
+              }
               type="button"
             >
               {isPending ? "Reserving credit…" : "Use 1 credit and generate"}
@@ -255,10 +281,15 @@ export function GenerationWorkspace({
                       disabled={isPending || item.regenerationCount >= 2}
                       onClick={() =>
                         run(() =>
-                          regenerateFixtureItemAction({
-                            menuId,
-                            itemId: item.itemId,
-                          }),
+                          backend === "managed"
+                            ? regenerateManagedItemAction({
+                                menuId,
+                                itemId: item.itemId,
+                              })
+                            : regenerateFixtureItemAction({
+                                menuId,
+                                itemId: item.itemId,
+                              }),
                         )
                       }
                       type="button"
@@ -271,6 +302,30 @@ export function GenerationWorkspace({
                       Reference: {item.sanitizedErrorCode}
                     </small>
                   </>
+                ) : null}
+                {item.state === "generated" ? (
+                  <button
+                    className="quiet-button"
+                    disabled={isPending || item.regenerationCount >= 2}
+                    onClick={() =>
+                      run(() =>
+                        backend === "managed"
+                          ? regenerateManagedItemAction({
+                              menuId,
+                              itemId: item.itemId,
+                            })
+                          : regenerateFixtureItemAction({
+                              menuId,
+                              itemId: item.itemId,
+                            }),
+                      )
+                    }
+                    type="button"
+                  >
+                    {item.regenerationCount >= 2
+                      ? "Regeneration limit reached"
+                      : `Regenerate image · ${2 - item.regenerationCount} left`}
+                  </button>
                 ) : null}
               </div>
             </article>

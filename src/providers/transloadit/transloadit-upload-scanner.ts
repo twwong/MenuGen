@@ -44,6 +44,8 @@ const assemblySchema = z
       z
         .object({
           id: z.string().min(1),
+          mime: z.string().min(1),
+          size: z.number().int().nonnegative(),
         })
         .passthrough(),
     ),
@@ -158,6 +160,21 @@ export class TransloaditUploadScanner implements UploadScanner {
     }
 
     const assembly = assemblySchema.parse(JSON.parse(webhook.transloadit));
+    if (assembly.uploads.length < 1 || assembly.uploads.length > 10) {
+      throw new Error("invalid_upload_count");
+    }
+    if (
+      assembly.uploads.reduce((total, upload) => total + upload.size, 0) >
+      50 * 1024 * 1024
+    ) {
+      throw new Error("upload_total_size_limit");
+    }
+    const pdfUploads = assembly.uploads.filter(
+      (upload) => upload.mime === "application/pdf",
+    );
+    if (pdfUploads.length > 0 && assembly.uploads.length !== 1) {
+      throw new Error("mixed_pdf_and_images");
+    }
     const normalized = [
       ...(assembly.results.normalized_images ?? []),
       ...(assembly.results.pdf_pages ?? []),
@@ -181,6 +198,7 @@ export class TransloaditUploadScanner implements UploadScanner {
     }
 
     return {
+      menuId: assembly.fields.menuId,
       assemblyId: assembly.assembly_id,
       files: normalized
         .map((file) => ({

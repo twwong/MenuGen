@@ -16,7 +16,7 @@ export class ResendCompletionEmailSender implements CompletionEmailSender {
   }
 
   async send(input: Parameters<CompletionEmailSender["send"]>[0]) {
-    const dashboardUrl = new URL("/dashboard", this.appUrl).toString();
+    const dashboardUrl = new URL("/create/dashboard", this.appUrl).toString();
     const { data, error } = await this.resend.emails.send(
       {
         from: this.from,

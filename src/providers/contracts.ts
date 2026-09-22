@@ -7,6 +7,7 @@ import type {
 
 export const providerOperationSchema = z.enum([
   "moderate_input",
+  "assess_preflight",
   "extract_menu",
   "translate_menu",
   "generate_dish_image",

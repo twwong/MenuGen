@@ -519,6 +519,29 @@ label {
   line-height: 1.5;
 }
 
+.preflight-guidance {
+  margin-top: 1.25rem;
+  border-left: 3px solid var(--palette-persimmon);
+  background: rgb(216 92 53 / 8%);
+  padding: 1rem;
+}
+
+.preflight-guidance h2 {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.35rem;
+}
+
+.preflight-guidance ul {
+  margin-top: 0.75rem;
+  padding-left: 1.2rem;
+}
+
+.preflight-guidance li {
+  margin-top: 0.4rem;
+  color: var(--palette-ink-muted);
+  line-height: 1.5;
+}
+
 .processing-aside {
   align-self: start;
   border-top: 4px solid var(--palette-persimmon);
@@ -1018,6 +1041,15 @@ label {
   padding: 1rem;
 }
 
+.cost-warning {
+  margin-top: 1rem;
+  border-left: 3px solid var(--palette-persimmon);
+  padding: 0.75rem 1rem;
+  color: #7e2b16;
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
 .generation-confirmation h2 {
   font-family: Georgia, "Times New Roman", serif;
   font-size: 1.4rem;
@@ -1085,6 +1117,7 @@ label {
 
 .generation-card__image small {
   position: absolute;
+  z-index: 1;
   right: 0.5rem;
   bottom: 0.5rem;
   background: var(--palette-menu-paper);

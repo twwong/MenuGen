@@ -1,6 +1,6 @@
 # MenuGen Implementation Plan
 
-**Current status:** Milestone 1 is complete. Milestone 2 is in progress. The deterministic creator proof now runs from ordered upload through review, one-time anonymous claim, quota reservation/consumption, source-photo reuse, independent item generation, visible partial failure, uploader regeneration, a resumable dashboard, a private result, one-time completion, and idempotent deletion/expiry. Duplicate fixture delivery does not double-consume a credit. Mobile Chrome/Safari and automated WCAG checks pass. Managed ingestion, Clerk/Neon persistence, Vercel Workflow execution, Resend delivery, and all external provisioning remain open.
+**Current status:** Milestone 1 is complete. Milestone 2 is in progress. The deterministic creator proof runs from ordered upload through review, one-time anonymous claim, quota reservation/consumption, source-photo reuse, independent item generation, visible partial failure, uploader regeneration, a resumable dashboard, a private result, one-time completion, and idempotent deletion/expiry. The managed path now implements the same journey across Clerk, Neon, private Blob stores, Transloadit, Vercel Workflow, Upstash, Resend, and OpenAI. It has not touched those services yet: development provisioning, migrations, protected-preview integration tests, and manually approved live smoke tests remain open.
 
 ## Goal
 
@@ -124,9 +124,9 @@ The first slice may use fixture files instead of uploads, authentication, persis
 ### Vertical slices
 
 - [x] Foundation: domain schemas, state rules, Drizzle schema/migrations, safe DAL contracts, provider interfaces, and managed-stack ADRs.
-- [ ] Upload and review: the fixture-backed UI, immutable corrections, strict local validation, crop-before-delete ordering, signed Transloadit adapter, and callback verification are complete. Managed callback persistence, preflight execution, and verified remote source deletion remain.
-- [ ] Authentication and generation: the fixture proof covers one-time claim, rolling quota behavior, duplicate delivery, source-photo suppression, bounded retry policy, item isolation, cost ceilings, and two uploader regenerations. The Clerk-backed claim, transactional Neon ledger, and Vercel Workflow fan-out remain open.
-- [ ] Resume and lifecycle: the fixture proof covers visibility-aware polling, private results, dashboard resume, one-time completion events, 30-day expiry, immediate deletion, a shared idempotent deletion path, and content-free 90-day tombstones. Database outbox delivery, scheduled Vercel workflows, and remote asset deletion remain open.
+- [ ] Upload and review: local code now covers signed Transloadit intake, callback verification, strict normalized-file validation, moderation, preflight, extraction, immutable revision persistence, crop-before-delete ordering, and the review UI. Real callback delivery and remote source deletion still need protected-preview verification.
+- [ ] Authentication and generation: local code now covers Clerk-backed atomic claiming, a transactional Neon quota ledger, source-only completion, grouped Vercel Workflow fan-out, bounded retries, item isolation, cost ceilings, private result assets, and two uploader regenerations. Concurrency and provider-failure behavior still need provisioned integration tests.
+- [ ] Resume and lifecycle: local code now covers safe polling DTOs, private asset streaming, the dashboard, database-backed Resend idempotency, immediate deletion, 24-hour source cleanup, 30-day expiration, and 90-day audit pruning. Scheduled execution, email delivery, and remote asset deletion still need protected-preview verification.
 - [ ] Closure: protected-preview acceptance, manual live smoke tests, final documentation, and milestone sign-off.
 
 ## Milestone 3: Publication and operations
@@ -219,7 +219,7 @@ The fixture-v3 extraction-only run passed both PNG and PDF cases for `$0.041302`
 
 ## Explicitly deferred
 
-- Production auth, storage, and database provisioning before their spikes
+- Public-production enablement before the protected preview passes
 - Full design system before the first pipeline proof
 - Admin console before operational data exists
 - Multi-provider failover

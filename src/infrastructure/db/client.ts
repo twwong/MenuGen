@@ -1,7 +1,7 @@
 import "server-only";
 
-import { neon } from "@neondatabase/serverless";
-import { drizzle } from "drizzle-orm/neon-http";
+import { Pool } from "@neondatabase/serverless";
+import { drizzle } from "drizzle-orm/neon-serverless";
 
 import * as schema from "@/infrastructure/db/schema";
 
@@ -13,7 +13,8 @@ function createDatabase() {
     throw new Error("DATABASE_URL is required for persistent creator data");
   }
 
-  return drizzle(neon(databaseUrl), { schema });
+  const pool = new Pool({ connectionString: databaseUrl });
+  return drizzle(pool, { schema });
 }
 
 export function getDatabase() {

@@ -4,7 +4,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
-import { deleteFixtureMenuAction } from "@/app/create/actions";
+import {
+  deleteFixtureMenuAction,
+  deleteManagedMenuAction,
+} from "@/app/create/actions";
 
 interface MenuSummary {
   id: string;
@@ -16,7 +19,13 @@ interface MenuSummary {
   totalItemCount: number;
 }
 
-export function DashboardMenus({ menus }: { menus: readonly MenuSummary[] }) {
+export function DashboardMenus({
+  menus,
+  backend,
+}: {
+  menus: readonly MenuSummary[];
+  backend: "fixture" | "managed";
+}) {
   const router = useRouter();
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -32,7 +41,11 @@ export function DashboardMenus({ menus }: { menus: readonly MenuSummary[] }) {
     setDeletingId(menuId);
     startTransition(async () => {
       try {
-        await deleteFixtureMenuAction(menuId);
+        if (backend === "managed") {
+          await deleteManagedMenuAction(menuId);
+        } else {
+          await deleteFixtureMenuAction(menuId);
+        }
         router.refresh();
       } catch {
         setError("The menu could not be deleted. Please try again.");

@@ -23,24 +23,15 @@ describe("TransloaditUploadScanner", () => {
     expect(signed.params).toContain("/document/thumbs");
   });
 
-  it("restores source and PDF page order instead of trusting result order", async () => {
+  it("restores PDF page order instead of trusting result order", async () => {
     const transloadit = JSON.stringify({
       assembly_id: "assembly-1",
       ok: "ASSEMBLY_COMPLETED",
       error: null,
       fields: { menuId: "78b51473-88d8-4c9a-9949-a279ad123876" },
-      uploads: [{ id: "upload-a" }, { id: "upload-b" }],
+      uploads: [{ id: "upload-a", mime: "application/pdf", size: 2_000 }],
       results: {
-        normalized_images: [
-          {
-            id: "result-b",
-            original_id: "upload-b",
-            url: "https://tmp.example/b.jpg",
-            mime: "image/jpeg",
-            size: 200,
-            meta: {},
-          },
-        ],
+        normalized_images: [],
         pdf_pages: [
           {
             id: "result-a-2",
@@ -67,12 +58,12 @@ describe("TransloaditUploadScanner", () => {
 
     const result = await scanner.verifyCallback({ transloadit, signature });
 
+    expect(result.menuId).toBe("78b51473-88d8-4c9a-9949-a279ad123876");
     expect(
       result.files.map((file) => [file.sourceFileOrder, file.pageIndex]),
     ).toEqual([
       [0, 0],
       [0, 1],
-      [1, 0],
     ]);
   });
 
@@ -83,5 +74,66 @@ describe("TransloaditUploadScanner", () => {
         signature: "0".repeat(40),
       }),
     ).rejects.toThrow("invalid_upload_callback_signature");
+  });
+
+  it("rejects mixed PDF and image uploads after signature verification", async () => {
+    const transloadit = JSON.stringify({
+      assembly_id: "assembly-mixed",
+      ok: "ASSEMBLY_COMPLETED",
+      error: null,
+      fields: { menuId: "78b51473-88d8-4c9a-9949-a279ad123876" },
+      uploads: [
+        { id: "pdf", mime: "application/pdf", size: 100 },
+        { id: "image", mime: "image/jpeg", size: 100 },
+      ],
+      results: {
+        normalized_images: [
+          {
+            id: "image-result",
+            original_id: "image",
+            url: "https://tmp.transloadit.com/image.jpg",
+            mime: "image/jpeg",
+            size: 100,
+          },
+        ],
+        pdf_pages: [
+          {
+            id: "pdf-result",
+            original_id: "pdf",
+            url: "https://tmp.transloadit.com/pdf.png",
+            mime: "image/png",
+            size: 100,
+          },
+        ],
+      },
+    });
+    const signature = createHmac("sha1", "test-secret")
+      .update(transloadit)
+      .digest("hex");
+
+    await expect(
+      scanner.verifyCallback({ transloadit, signature }),
+    ).rejects.toThrow("mixed_pdf_and_images");
+  });
+
+  it("enforces the 50 MB aggregate source limit", async () => {
+    const transloadit = JSON.stringify({
+      assembly_id: "assembly-large",
+      ok: "ASSEMBLY_COMPLETED",
+      error: null,
+      fields: { menuId: "78b51473-88d8-4c9a-9949-a279ad123876" },
+      uploads: [
+        { id: "a", mime: "image/jpeg", size: 26 * 1024 * 1024 },
+        { id: "b", mime: "image/jpeg", size: 26 * 1024 * 1024 },
+      ],
+      results: { normalized_images: [], pdf_pages: [] },
+    });
+    const signature = createHmac("sha1", "test-secret")
+      .update(transloadit)
+      .digest("hex");
+
+    await expect(
+      scanner.verifyCallback({ transloadit, signature }),
+    ).rejects.toThrow("upload_total_size_limit");
   });
 });
