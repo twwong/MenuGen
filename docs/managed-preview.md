@@ -15,7 +15,7 @@ offers a region choice. Never print, commit, or copy secret values into reports.
 3. [x] Create separate private Vercel Blob stores for sources and results.
 4. [x] Provision Transloadit signed uploads and normalization with one-day Assembly retention.
 5. [x] Create the Singapore Upstash Redis database.
-6. Configure Resend's development sender.
+6. [x] Configure Resend's development sender.
 7. Configure the Vercel protected-preview project and Vercel Workflow.
 8. Add the existing OpenAI project key and project-side spend limit.
 
@@ -62,6 +62,18 @@ app also keeps the direct-Upstash names as a backward-compatible local option.
 The resource reports available, a safe-mode `PING` returned `PONG`, and the
 connection scope is verified. Live IP/device rate-limit behavior still needs
 protected-preview verification.
+
+Resend was configured on 2026-09-22 with a sending-only
+`menugen-development` API key. The key is a Vercel Secret and
+`RESEND_FROM_EMAIL=onboarding@resend.dev` is readable configuration; both are
+limited to Development and Preview, with Production untouched. The direct
+Resend setup is intentional for development because the current Vercel
+Marketplace flow requires an owned domain, while this stage uses Resend's test
+sender. One content-free delivery check to `delivered@resend.dev` was rejected
+before send with sanitized reason `validation_error`; it was not retried, and
+its disposable key was revoked. End-to-end completion delivery therefore stays
+in the protected-preview acceptance matrix. Production also still needs a
+verified sending domain.
 
 The environment key names are documented in `.env.example`. Validate presence,
 not values. Keep `CREATOR_WORKFLOW_ENABLED=false` in public production.
