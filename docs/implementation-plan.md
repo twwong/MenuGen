@@ -1,6 +1,6 @@
 # MenuGen Implementation Plan
 
-**Current status:** Milestone 1 is complete. Milestone 2 is in progress. The deterministic creator proof runs from ordered upload through review, one-time anonymous claim, quota reservation/consumption, source-photo reuse, independent item generation, visible partial failure, uploader regeneration, a resumable dashboard, a private result, one-time completion, and idempotent deletion/expiry. The managed path now implements the same journey across Clerk, Neon, private Blob stores, Transloadit, Vercel Workflow, Upstash, Resend, and OpenAI. It has not touched those services yet: development provisioning, migrations, protected-preview integration tests, and manually approved live smoke tests remain open.
+**Current status:** Milestone 1 is complete. Milestone 2 is in progress. The deterministic creator proof runs from ordered upload through review, one-time anonymous claim, quota reservation/consumption, source-photo reuse, independent item generation, visible partial failure, uploader regeneration, a resumable dashboard, a private result, one-time completion, and idempotent deletion/expiry. The managed path now implements the same journey across Clerk, Neon, private Blob stores, Transloadit, Vercel Workflow, Upstash, Resend, and OpenAI. The Clerk development application is provisioned with email-code and Google sign-in. Remaining service provisioning, migrations, protected-preview integration tests, and manually approved live smoke tests remain open.
 
 ## Goal
 

@@ -10,7 +10,7 @@ offers a region choice. Never print, commit, or copy secret values into reports.
 
 ## Provisioning order
 
-1. Create the Clerk development application with email codes and Google sign-in.
+1. [x] Create the Clerk development application with email codes and Google sign-in.
 2. Create the Singapore Neon project and apply committed Drizzle migrations.
 3. Create separate private Vercel Blob stores for sources and results.
 4. Create the Transloadit template and callback credentials with one-day Assembly retention.
@@ -18,6 +18,11 @@ offers a region choice. Never print, commit, or copy secret values into reports.
 6. Configure Resend's development sender.
 7. Configure the Vercel protected-preview project and Vercel Workflow.
 8. Add the existing OpenAI project key and project-side spend limit.
+
+Clerk was provisioned on 2026-09-22 as the `MenuGen` development application.
+Email verification codes are enabled for sign-up and sign-in, and Google uses
+Clerk's shared development credentials. Its keys exist only in the ignored local
+environment file; they are not recorded in documentation or Git.
 
 The environment key names are documented in `.env.example`. Validate presence,
 not values. Keep `CREATOR_WORKFLOW_ENABLED=false` in public production.
