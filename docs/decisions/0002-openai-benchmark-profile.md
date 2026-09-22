@@ -35,5 +35,5 @@ The extraction-only calibration run corrected the misleading two-items-beside-on
 - Cost is no longer the leading pipeline risk at the measured profile.
 - Low quality is the default candidate, but launch evaluation must still test more cuisines and visual styles.
 - Source-photo reuse needs prompt/schema calibration and more representative fixtures. Lowering the confidence threshold to make the current fixture pass is explicitly rejected.
-- The next source-photo fixture must contain an internally created photorealistic dish image. Repeating the same abstract fixture would spend money without testing a new hypothesis.
+- Fixture v3 replaces the abstract image with an attributed CC BY mackerel photograph. Its new hypothesis must be tested with the extraction-only profile before closing Milestone 1.
 - Current pricing is configuration stamped to this run and must be rechecked before later benchmarks.

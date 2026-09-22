@@ -72,7 +72,7 @@ The later extraction-only calibration run used corrected v2 layouts where the di
 - PDF: the candidate region scored `0.99` and the correct item association scored `0.98`; usability scored `0.62`, remained `uncertain`, and correctly blocked reuse.
 - No translations, image generations, or retries occurred.
 
-This isolates the remaining blocker: the current CSS illustration is not representative of a usable source dish photograph. Milestone 1 stays open. The next fixture revision must embed an internally created photorealistic dish image and rerun only the extraction profile; the `0.85` threshold remains unchanged.
+This isolated the remaining blocker in fixture v2: its CSS illustration was not representative of a usable source dish photograph. Fixture v3 replaces it with an attributed CC BY photograph of mackerel in miso sauce while keeping the udon intentionally text-only. Milestone 1 stays open until the extraction-only profile validates v3; the `0.85` threshold remains unchanged.
 
 ## OpenAI adapter
 

@@ -5,6 +5,10 @@ import { chromium } from "@playwright/test";
 
 const outputDirectory = path.resolve("tests/fixtures/live");
 await mkdir(outputDirectory, { recursive: true });
+const sourcePhotoBytes = await readFile(
+  path.join(outputDirectory, "assets/mackerel-miso-source.jpg"),
+);
+const sourcePhotoDataUrl = `data:image/jpeg;base64,${sourcePhotoBytes.toString("base64")}`;
 
 const browser = await chromium.launch();
 try {
@@ -12,7 +16,9 @@ try {
     viewport: { width: 1200, height: 1600 },
     deviceScaleFactor: 1,
   });
-  await page.setContent(menuDocument(), { waitUntil: "load" });
+  await page.setContent(menuDocument(sourcePhotoDataUrl), {
+    waitUntil: "load",
+  });
   await page.locator("main").screenshot({
     path: path.join(outputDirectory, "synthetic-menu-photo.png"),
   });
@@ -41,12 +47,12 @@ await writeFile(pdfPath, Buffer.from(normalizedPdf, "latin1"));
 
 const fixtureDefinitions = [
   {
-    id: "synthetic-menu-photo-v2",
+    id: "synthetic-menu-photo-v3",
     fileName: "synthetic-menu-photo.png",
     mimeType: "image/png",
   },
   {
-    id: "synthetic-menu-document-v2",
+    id: "synthetic-menu-document-v3",
     fileName: "synthetic-menu-document.pdf",
     mimeType: "application/pdf",
   },
@@ -71,7 +77,7 @@ await writeFile(
   "utf8",
 );
 
-function menuDocument() {
+function menuDocument(sourcePhotoDataUrl: string) {
   return `<!doctype html>
 <html lang="ja">
   <head>
@@ -106,16 +112,9 @@ function menuDocument() {
         position: relative;
         height: 315px;
         overflow: hidden;
-        background: radial-gradient(circle at 50% 48%, #d5d0c0 0 34%, #42372d 35% 41%, #c6a66f 42% 60%, #4f7251 61% 66%, #252c22 67%);
+        background: #342d25;
       }
-      .dish-photo::before {
-        content: "";
-        position: absolute; inset: 29% 22% 31%;
-        border-radius: 48% 52% 46% 54%;
-        transform: rotate(-8deg);
-        background: linear-gradient(135deg, #6d3627, #b66436 46%, #4b251e 72%);
-        box-shadow: -40px 38px 0 -22px #d6b56b, 55px -25px 0 -28px #dbe0bd;
-      }
+      .dish-photo img { display: block; width: 100%; height: 100%; object-fit: cover; }
       .photo-caption { padding: 4px 18px 2px; border-top: 3px solid #8c3c2e; }
       .photo-caption .item { border-bottom: 0; }
       .text-only-card {
@@ -178,7 +177,7 @@ function menuDocument() {
       <h2>おすすめ / Specials</h2>
       <section class="hero">
         <figure class="photo-card">
-          <div class="dish-photo" aria-label="Synthetic source photo for the mackerel dish"></div>
+          <div class="dish-photo"><img src="${sourcePhotoDataUrl}" alt="鯖の味噌煮" /></div>
           <figcaption class="photo-caption">
             <div class="item">
               <div class="item-line"><span class="name">鯖の味噌煮</span><span class="price">¥1,280</span></div>
