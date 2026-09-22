@@ -21,6 +21,16 @@ describe("TransloaditUploadScanner", () => {
     expect(signed.params).not.toContain("test-secret");
     expect(signed.params).toContain("/file/virusscan");
     expect(signed.params).toContain("/document/thumbs");
+    const params = JSON.parse(signed.params) as {
+      transcoding_result_expiry: string;
+      steps: {
+        normalized_images: { imagemagick_stack: string };
+        pdf_pages: { imagemagick_stack: string };
+      };
+    };
+    expect(params.transcoding_result_expiry).toBe("1day");
+    expect(params.steps.normalized_images.imagemagick_stack).toBe("v3.0.1");
+    expect(params.steps.pdf_pages.imagemagick_stack).toBe("v3.0.1");
   });
 
   it("restores PDF page order instead of trusting result order", async () => {
@@ -36,7 +46,8 @@ describe("TransloaditUploadScanner", () => {
           {
             id: "result-a-2",
             original_id: "upload-a",
-            url: "https://tmp.example/a-2.png",
+            url: "http://tmp.example/a-2.png",
+            ssl_url: "https://tmp.example/a-2.png",
             mime: "image/png",
             size: 120,
             meta: { thumb_index: 1, page_count: 2 },
@@ -44,7 +55,8 @@ describe("TransloaditUploadScanner", () => {
           {
             id: "result-a-1",
             original_id: "upload-a",
-            url: "https://tmp.example/a-1.png",
+            url: "http://tmp.example/a-1.png",
+            ssl_url: "https://tmp.example/a-1.png",
             mime: "image/png",
             size: 100,
             meta: { thumb_index: 0, page_count: 2 },
@@ -64,6 +76,10 @@ describe("TransloaditUploadScanner", () => {
     ).toEqual([
       [0, 0],
       [0, 1],
+    ]);
+    expect(result.files.map((file) => file.normalizedAssetRef)).toEqual([
+      "https://tmp.example/a-1.png",
+      "https://tmp.example/a-2.png",
     ]);
   });
 
@@ -91,7 +107,7 @@ describe("TransloaditUploadScanner", () => {
           {
             id: "image-result",
             original_id: "image",
-            url: "https://tmp.transloadit.com/image.jpg",
+            ssl_url: "https://tmp.transloadit.com/image.jpg",
             mime: "image/jpeg",
             size: 100,
           },
@@ -100,7 +116,7 @@ describe("TransloaditUploadScanner", () => {
           {
             id: "pdf-result",
             original_id: "pdf",
-            url: "https://tmp.transloadit.com/pdf.png",
+            ssl_url: "https://tmp.transloadit.com/pdf.png",
             mime: "image/png",
             size: 100,
           },

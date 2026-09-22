@@ -13,7 +13,7 @@ offers a region choice. Never print, commit, or copy secret values into reports.
 1. [x] Create the Clerk development application with email codes and Google sign-in.
 2. [x] Create the Singapore Neon project and apply committed Drizzle migrations.
 3. [x] Create separate private Vercel Blob stores for sources and results.
-4. Create the Transloadit template and callback credentials with one-day Assembly retention.
+4. [x] Provision Transloadit signed uploads and normalization with one-day Assembly retention.
 5. Create the Singapore Upstash Redis database.
 6. Configure Resend's development sender.
 7. Configure the Vercel protected-preview project and Vercel Workflow.
@@ -37,6 +37,21 @@ separate `SOURCE_BLOB_*` and `RESULT_BLOB_*` environment prefixes. Read/write
 tokens exist only in Vercel's sensitive environment settings and the ignored
 local environment file. Production is not connected. Remote upload, private
 delivery, and deletion behavior still need protected-preview verification.
+
+Transloadit was provisioned on 2026-09-22 as the `menugen-dev` workspace.
+Signature authentication is required, automatic Assembly replay and stored
+instructions are disabled, and Assembly status is retained for one day. The app
+uses a short-lived, signed, source-controlled recipe rather than a mutable
+dashboard Template; that recipe verifies MIME types and file sizes, scans for
+malware, normalizes images and HEIC/HEIF to JPEG, renders up to ten PDF pages,
+pins ImageMagick `v3.0.1`, and requests one-day status and result retention. Its
+scoped credential is available only in the ignored local environment file and
+Vercel's Development and Preview Secret variables. Production is untouched.
+Transloadit's temporary result URLs are copied once into the private source Blob
+store and, according to the provider's current retention documentation, are
+automatically removed after 24 hours. A credential exchange passed without
+printing secrets; real upload, malware, callback, and normalization behavior
+still need protected-preview verification.
 
 The environment key names are documented in `.env.example`. Validate presence,
 not values. Keep `CREATOR_WORKFLOW_ENABLED=false` in public production.

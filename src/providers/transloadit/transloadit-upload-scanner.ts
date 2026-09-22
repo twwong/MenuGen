@@ -16,7 +16,7 @@ const webhookInputSchema = z
 const resultFileSchema = z
   .object({
     id: z.string().min(1),
-    url: z.string().url(),
+    ssl_url: z.string().url(),
     mime: z.string().min(1),
     size: z.number().int().nonnegative(),
     original_id: z.string().min(1).optional(),
@@ -79,6 +79,7 @@ export class TransloaditUploadScanner implements UploadScanner {
       notify_url: this.notifyUrl,
       max_num_files: input.sourceCount,
       assembly_status_expiry: "1day",
+      transcoding_result_expiry: "1day",
       steps: {
         ":original": { robot: "/upload/handle" },
         verified: {
@@ -118,6 +119,7 @@ export class TransloaditUploadScanner implements UploadScanner {
           use: ["images_only"],
           robot: "/image/resize",
           result: true,
+          imagemagick_stack: "v3.0.1",
           format: "jpg",
           rotation: "auto",
           resize_strategy: "fit",
@@ -128,6 +130,7 @@ export class TransloaditUploadScanner implements UploadScanner {
           use: ["pdf_only"],
           robot: "/document/thumbs",
           result: true,
+          imagemagick_stack: "v3.0.1",
           format: "png",
           resize_strategy: "fit",
           width: 2400,
@@ -212,7 +215,7 @@ export class TransloaditUploadScanner implements UploadScanner {
           pageCount:
             file.meta?.page_count ?? pagesPerUpload.get(file.original_id!) ?? 1,
           malwareStatus: "clean" as const,
-          normalizedAssetRef: file.url,
+          normalizedAssetRef: file.ssl_url,
         }))
         .sort(
           (left, right) =>
