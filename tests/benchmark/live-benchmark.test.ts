@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   assertFixtureHash,
   runLiveBenchmark,
+  runLivePhotoAssociationBenchmark,
   validateLiveBenchmarkOptions,
   type LiveBenchmarkFixture,
 } from "@/benchmark/live-benchmark";
@@ -31,7 +32,35 @@ describe("live benchmark preflight", () => {
         ["--confirm-spend", "--max-usd", "2"],
         "key",
       ),
-    ).toEqual({ apiKey: "key", maxUsd: 2 });
+    ).toEqual({ apiKey: "key", maxUsd: 2, profile: "full" });
+    expect(() =>
+      validateLiveBenchmarkOptions(
+        [
+          "--profile",
+          "photo-association",
+          "--confirm-spend",
+          "--max-usd",
+          "0.76",
+        ],
+        "key",
+      ),
+    ).toThrow("no more than 0.75");
+    expect(
+      validateLiveBenchmarkOptions(
+        [
+          "--profile",
+          "photo-association",
+          "--confirm-spend",
+          "--max-usd",
+          "0.75",
+        ],
+        "key",
+      ),
+    ).toEqual({
+      apiKey: "key",
+      maxUsd: 0.75,
+      profile: "photo-association",
+    });
   });
 
   it("rejects fixture bytes that do not match the committed hash", () => {
@@ -65,6 +94,7 @@ describe("runLiveBenchmark", () => {
     });
 
     expect(report.passed).toBe(true);
+    expect(report).toMatchObject({ schemaVersion: "2", profile: "full" });
     expect(report.callCounts).toEqual({
       extractMenu: 1,
       translateMenu: 1,
@@ -140,6 +170,92 @@ describe("runLiveBenchmark", () => {
       failure: { code: "provider_call_failed" },
     });
     expect(JSON.stringify(report)).not.toContain("Unknown fixture input");
+  });
+});
+
+describe("runLivePhotoAssociationBenchmark", () => {
+  it("makes extraction calls only and emits confidence diagnostics", async () => {
+    const provider = new FixtureAiProvider(liveProviderFixture());
+    const translate = vi.spyOn(provider, "translateMenu");
+    const generate = vi.spyOn(provider, "generateDishImage");
+    const secondFixture = liveFixture();
+    secondFixture.id = "second-format";
+
+    const report = await runLivePhotoAssociationBenchmark({
+      fixtures: [liveFixture(), secondFixture],
+      provider,
+      maxUsd: 0.75,
+      textModel: "text-test",
+    });
+
+    expect(report).toMatchObject({
+      schemaVersion: "2",
+      profile: "photo_association",
+      passed: true,
+      callCounts: {
+        extractMenu: 2,
+        translateMenu: 0,
+        generateDishImage: 0,
+      },
+    });
+    expect(report.cases[0].sourcePhotoDiagnostics).toMatchObject({
+      candidateCount: 1,
+      reusableCount: 1,
+      expectedAssociationMatched: true,
+      expectedReuseReady: true,
+      reasonCodes: [],
+    });
+    expect(translate).not.toHaveBeenCalled();
+    expect(generate).not.toHaveBeenCalled();
+    expect(JSON.stringify(report)).not.toContain("鯖の味噌煮");
+    expect(JSON.stringify(report)).not.toContain("fixture://");
+  });
+
+  it("isolates extraction failures without retrying", async () => {
+    const providerFixture = liveProviderFixture();
+    providerFixture.costUsd.extract_menu = 0.36;
+    const provider = new FixtureAiProvider(providerFixture);
+    const extract = vi.spyOn(provider, "extractMenu");
+
+    const report = await runLivePhotoAssociationBenchmark({
+      fixtures: [liveFixture()],
+      provider,
+      maxUsd: 0.75,
+      textModel: "text-test",
+    });
+
+    expect(report.passed).toBe(false);
+    expect(report.callCounts.extractMenu).toBe(1);
+    expect(report.cases[0].failure?.code).toBe("budget_reservation_breached");
+    expect(extract).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps an ambiguous multi-item association under review", async () => {
+    const providerFixture = liveProviderFixture();
+    const candidate = providerFixture.extraction.sourcePhotoCandidates[0];
+    candidate.association.itemId = null;
+    candidate.association.confidence = 0.5;
+    candidate.association.needsReview = true;
+    const provider = new FixtureAiProvider(providerFixture);
+
+    const report = await runLivePhotoAssociationBenchmark({
+      fixtures: [liveFixture()],
+      provider,
+      maxUsd: 0.75,
+      textModel: "text-test",
+    });
+
+    expect(report.passed).toBe(false);
+    expect(report.cases[0].sourcePhotoDiagnostics).toMatchObject({
+      expectedAssociationMatched: false,
+      expectedReuseReady: false,
+      reviewCounts: { association: 1 },
+      reasonCodes: [
+        "expected_item_unassociated",
+        "association_below_threshold",
+        "association_requires_review",
+      ],
+    });
   });
 });
 

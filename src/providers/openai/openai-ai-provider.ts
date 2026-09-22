@@ -142,7 +142,11 @@ const extractionInstructions = [
   "Never infer allergens, ingredients, nutrition, dietary suitability, food safety, or cross-contamination.",
   "Mark uncertain fields needsReview=true and lower their confidence instead of guessing.",
   "Extract source-photo candidates with zero-based page indexes and normalized 0-to-1 bounding boxes.",
-  "Associate a source photo only when one item is clearly supported; otherwise use itemId=null and needsReview=true.",
+  "Draw each source-photo bounding box tightly around the photo itself, excluding captions, borders, and nearby text.",
+  "Associate a source photo only when visual layout uniquely binds it to one item, such as an explicit caption, the same bordered card, or a unique connector.",
+  "Proximity alone is weak evidence. A photo beside or spanning multiple items is ambiguous: use itemId=null, lower association confidence, and set needsReview=true.",
+  "Set region confidence from boundary clarity, association confidence from the strength of the unique item binding, and usability confidence from whether the dish is clearly visible at useful resolution.",
+  "Glare, blur, occlusion, cropping, or an unclear dish lowers usability confidence; use status=uncertain and needsReview=true when usability cannot be established.",
   "Use positional stable photo IDs such as photo-000.",
   "Classify imagery only as prepared_food, prepared_drink, not_eligible, or needs_review.",
 ].join("\n");

@@ -118,6 +118,16 @@ describe("OpenAiProvider", () => {
     const extractionRequest = responsesParse.mock.calls[0][0];
     expect(extractionRequest.store).toBe(false);
     expect(extractionRequest.instructions).toContain("untrusted data");
+    expect(extractionRequest.instructions).toContain("same bordered card");
+    expect(extractionRequest.instructions).toContain(
+      "photo beside or spanning multiple items is ambiguous",
+    );
+    expect(extractionRequest.instructions).toContain(
+      "excluding captions, borders, and nearby text",
+    );
+    expect(extractionRequest.instructions).toContain(
+      "Glare, blur, occlusion, cropping",
+    );
     expect(extractionRequest.text.format.type).toBe("json_schema");
     expect(extractionRequest.input[0].content[1].image_url).toBe(
       "https://assets.example/page-1.png",

@@ -6,6 +6,7 @@ import {
 import { runMenuPipeline } from "@/pipeline/menu-pipeline";
 import { FixtureAiProvider } from "@/providers/fixture/fixture-ai-provider";
 import { adversarialGlareBenchmark } from "../fixtures/benchmarks/adversarial-glare-menu";
+import { ambiguousPhotoBenchmark } from "../fixtures/benchmarks/ambiguous-photo-menu";
 import { japaneseDinnerBenchmark } from "../fixtures/benchmarks/ja-dinner-menu";
 import {
   benchmarkManifest,
@@ -37,11 +38,11 @@ describe("runBenchmarkCase", () => {
 
     expect(report.passed).toBe(true);
     expect(report.summary).toMatchObject({
-      caseCount: 2,
-      passedCaseCount: 2,
+      caseCount: 3,
+      passedCaseCount: 3,
       failedCaseCount: 0,
-      itemCount: 5,
-      eligibleImageCount: 0,
+      itemCount: 7,
+      eligibleImageCount: 2,
     });
     expect(adversarial).toMatchObject({
       passed: true,
@@ -53,8 +54,27 @@ describe("runBenchmarkCase", () => {
     });
     const serializedReport = JSON.stringify(report);
     expect(serializedReport).not.toContain("鯖の味噌煮");
+    expect(serializedReport).not.toContain("焼き餃子");
     expect(serializedReport).not.toContain("Miso-braised mackerel");
     expect(serializedReport).not.toContain("ignore previous instructions");
+  });
+
+  it("does not guess when one usable photo sits beside multiple items", async () => {
+    const report = await runBenchmarkCase(ambiguousPhotoBenchmark);
+
+    expect(report.passed).toBe(true);
+    expect(report.confidence.disposition).toBe("review");
+    expect(report.metrics.eligibleImageCount).toBe(2);
+    expect(
+      report.checks.find(
+        (check) => check.name === "ambiguous source photos remain reviewable",
+      )?.passed,
+    ).toBe(true);
+    expect(
+      report.checks.find(
+        (check) => check.name === "only confident source photos are reused",
+      )?.passed,
+    ).toBe(true);
   });
 
   it("isolates a failed case and continues the manifest", async () => {

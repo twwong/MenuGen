@@ -208,6 +208,8 @@ export const japaneseDinnerBenchmark: MenuBenchmarkCase = {
     },
     needsReviewItemIds: ["daily-special"],
     generatedImageItemIds: [],
+    reusedSourcePhotoItemIds: ["mackerel"],
+    reviewSourcePhotoCandidateIds: [],
     confidenceDisposition: "review",
     untrustedInputFragments: [],
     forbiddenOutputFragments: ["peanut-free"],

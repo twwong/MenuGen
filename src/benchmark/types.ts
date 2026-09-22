@@ -16,6 +16,8 @@ export interface MenuBenchmarkCase {
     sourceClaimsByItemId: Record<string, string[]>;
     needsReviewItemIds: string[];
     generatedImageItemIds: string[];
+    reusedSourcePhotoItemIds: string[];
+    reviewSourcePhotoCandidateIds: string[];
     untrustedInputFragments: string[];
     forbiddenOutputFragments: string[];
     confidenceDisposition: MenuConfidenceDisposition;

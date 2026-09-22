@@ -18,7 +18,9 @@ The command runs the versioned fixture manifest and emits a JSON report containi
 
 `synthetic-adversarial-glare-v1` represents a mixed-language menu with glare, critically uncertain fields, and non-menu prompt-injection text. It verifies that the attack text and invented safety claims stay absent, uncertainty remains flagged, and rejected input produces no image prompts.
 
-Both cases use extraction schema v2 and check exact item order, confidence-aware price text, expected translations, explicit source claims, source-photo handling, image eligibility, and the $2 typical-menu ceiling.
+`synthetic-ambiguous-photo-v1` places one otherwise usable photo beside two prepared items. It verifies that proximity alone never creates an association, both items remain generation eligible, and the candidate stays reviewable.
+
+All three cases use extraction schema v2 and check exact item order, confidence-aware price text, expected translations, explicit source claims, source-photo handling, image eligibility, and the $2 typical-menu ceiling.
 
 ## Provisional confidence policy
 
@@ -41,7 +43,15 @@ Run only with an OpenAI project configured for the intended spend:
 pnpm benchmark:live -- --confirm-spend --max-usd 2
 ```
 
-The command validates committed fixture hashes and refuses to run without `OPENAI_API_KEY`, the exact confirmation flag, or a cap between zero and $2. It reserves at most $1.60 across two extraction, two translation, one low-quality image, and one medium-quality image call. Calls are not retried. Synthetic allowlisted fixtures bypass the production moderation pipeline; they are not user uploads and are never published.
+For source-photo calibration without translation or image generation:
+
+```bash
+pnpm benchmark:live -- --profile photo-association --confirm-spend --max-usd 0.75
+```
+
+The command validates committed fixture hashes and refuses to run without `OPENAI_API_KEY`, the exact confirmation flag, or a valid profile cap. The default full profile accepts at most $2 and reserves at most $1.60 across two extraction, two translation, one low-quality image, and one medium-quality image call. The photo-association profile accepts at most $0.75 and reserves at most $0.70 for two extraction calls; it makes zero translation and image calls. Calls are not retried. Synthetic allowlisted fixtures bypass the production moderation pipeline; they are not user uploads and are never published.
+
+Report schema v2 is discriminated by `profile`. Both profiles emit content-free source-photo diagnostics: confidence minima, review/status counts, expected-association disposition, reuse disposition, and sanitized reason codes. Reports never include menu text, prompts, stable item IDs, filenames, provider references, credentials, or raw errors.
 
 The 2026-09-22 run used `gpt-5.6-terra` and `gpt-image-2.5-flare-2026-09-08`. Terra is documented at $2 per million input tokens and $12 per million output tokens; Flare is documented at $5 per million text-input tokens, $8 per million image-input tokens, and $30 per million image-output tokens. See the official [Terra model page](https://developers.openai.com/api/docs/models/gpt-5.6-terra) and [Flare model page](https://developers.openai.com/api/docs/models/gpt-image-2.5-flare).
 
@@ -54,7 +64,15 @@ Measured result:
 - Both formats preserved item order and prices, flagged the ambiguous price, excluded prompt-injection text, and produced a generation candidate.
 - Both formats detected one source-photo candidate, but one photo confidence field remained reviewable, so automatic reuse correctly stayed disabled.
 
-The live report therefore failed the complete Milestone 1 gate even though cost, extraction, translation, and generated-image checks passed. The next benchmark change is source-photo association calibration—not lowering the `0.85` threshold.
+The full live report therefore failed the complete Milestone 1 gate even though cost, extraction, translation, and generated-image checks passed.
+
+The later extraction-only calibration run used corrected v2 layouts where the dish image and caption share one bordered card and the text-only item sits separately. It made exactly two extraction calls, reserved `$0.70`, and measured `$0.044950`:
+
+- PNG: source order, prices, ambiguity, and injection checks passed, but the abstract dish graphic produced `no_candidate`.
+- PDF: the candidate region scored `0.99` and the correct item association scored `0.98`; usability scored `0.62`, remained `uncertain`, and correctly blocked reuse.
+- No translations, image generations, or retries occurred.
+
+This isolates the remaining blocker: the current CSS illustration is not representative of a usable source dish photograph. Milestone 1 stays open. The next fixture revision must embed an internally created photorealistic dish image and rerun only the extraction profile; the `0.85` threshold remains unchanged.
 
 ## OpenAI adapter
 

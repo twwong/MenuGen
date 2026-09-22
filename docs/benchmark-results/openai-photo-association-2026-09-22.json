@@ -1,0 +1,142 @@
+{
+  "schemaVersion": "2",
+  "profile": "photo_association",
+  "passed": false,
+  "pricingBasis": "measured_provider_usage",
+  "models": {
+    "text": "gpt-5.6-terra"
+  },
+  "budget": {
+    "maximumUsd": 0.75,
+    "reservedUsd": 0.7,
+    "actualEstimatedCostUsd": 0.04495,
+    "reservationBreached": false
+  },
+  "callCounts": {
+    "extractMenu": 2,
+    "translateMenu": 0,
+    "generateDishImage": 0
+  },
+  "cases": [
+    {
+      "caseId": "synthetic-menu-photo-v2",
+      "passed": false,
+      "checks": [
+        { "name": "source order preserved", "passed": true },
+        { "name": "price text preserved", "passed": true },
+        { "name": "ambiguous price flagged", "passed": true },
+        { "name": "source photo confidently associated", "passed": false },
+        { "name": "source photo suppresses generation", "passed": false },
+        {
+          "name": "text-only item remains generation eligible",
+          "passed": true
+        },
+        { "name": "untrusted instructions absent", "passed": true },
+        {
+          "name": "low confidence never silently accepted",
+          "passed": true
+        }
+      ],
+      "metrics": {
+        "itemCount": 5,
+        "sourcePhotoCandidateCount": 0,
+        "reusableSourcePhotoCount": 0,
+        "generationCandidateCount": 5
+      },
+      "sourcePhotoDiagnostics": {
+        "candidateCount": 0,
+        "reusableCount": 0,
+        "expectedAssociationMatched": false,
+        "expectedReuseReady": false,
+        "reviewCounts": { "region": 0, "association": 0, "usability": 0 },
+        "usabilityStatusCounts": {
+          "usable": 0,
+          "unusable": 0,
+          "uncertain": 0
+        },
+        "minimumConfidence": {
+          "region": null,
+          "association": null,
+          "usability": null
+        },
+        "reasonCodes": ["no_candidate"]
+      },
+      "stages": [
+        {
+          "provider": "openai",
+          "model": "gpt-5.6-terra",
+          "operation": "extract_menu",
+          "latencyMs": 12645.344874999999,
+          "estimatedCostUsd": 0.01698,
+          "usage": {
+            "inputTokens": 3108,
+            "outputTokens": 897,
+            "images": 0
+          }
+        }
+      ]
+    },
+    {
+      "caseId": "synthetic-menu-document-v2",
+      "passed": false,
+      "checks": [
+        { "name": "source order preserved", "passed": true },
+        { "name": "price text preserved", "passed": true },
+        { "name": "ambiguous price flagged", "passed": true },
+        { "name": "source photo confidently associated", "passed": false },
+        { "name": "source photo suppresses generation", "passed": false },
+        {
+          "name": "text-only item remains generation eligible",
+          "passed": true
+        },
+        { "name": "untrusted instructions absent", "passed": true },
+        {
+          "name": "low confidence never silently accepted",
+          "passed": true
+        }
+      ],
+      "metrics": {
+        "itemCount": 5,
+        "sourcePhotoCandidateCount": 1,
+        "reusableSourcePhotoCount": 0,
+        "generationCandidateCount": 5
+      },
+      "sourcePhotoDiagnostics": {
+        "candidateCount": 1,
+        "reusableCount": 0,
+        "expectedAssociationMatched": true,
+        "expectedReuseReady": false,
+        "reviewCounts": { "region": 0, "association": 0, "usability": 1 },
+        "usabilityStatusCounts": {
+          "usable": 0,
+          "unusable": 0,
+          "uncertain": 1
+        },
+        "minimumConfidence": {
+          "region": 0.99,
+          "association": 0.98,
+          "usability": 0.62
+        },
+        "reasonCodes": [
+          "usability_not_usable",
+          "usability_below_threshold",
+          "usability_requires_review"
+        ]
+      },
+      "stages": [
+        {
+          "provider": "openai",
+          "model": "gpt-5.6-terra",
+          "operation": "extract_menu",
+          "latencyMs": 25095.325959,
+          "estimatedCostUsd": 0.027970000000000002,
+          "usage": {
+            "inputTokens": 3875,
+            "outputTokens": 1685,
+            "images": 0
+          }
+        }
+      ]
+    }
+  ]
+}

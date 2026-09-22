@@ -1,6 +1,6 @@
 # MenuGen Implementation Plan
 
-**Current status:** Pipeline benchmark in progress. Schema v2, deterministic coverage, and the capped OpenAI PNG/PDF benchmark are complete. Source-photo candidates were detected live but did not clear the automatic-reuse confidence threshold.
+**Current status:** Pipeline benchmark in progress. Schema v2, deterministic ambiguity coverage, report schema v2, and capped full/extraction-only OpenAI profiles are complete. The corrected PDF uniquely associated its source image, but the abstract synthetic dish graphic did not clear usability; the PNG did not classify it as a photo candidate.
 
 ## Goal
 
@@ -204,6 +204,8 @@ Record each accepted choice in `docs/decisions/`.
 - [x] Define provisional confidence and rejection thresholds.
 - [x] Measure the OpenAI adapter against representative synthetic PNG and PDF files.
 - [ ] Calibrate source-photo association until representative files clear the `0.85` automatic-reuse threshold without weakening uncertainty handling.
+
+The 2026-09-22 extraction-only calibration run preserved source facts and correctly associated the PDF candidate at `0.98`, but reported usability `0.62`/`uncertain`; the PNG reported `no_candidate`. The next calibration input must use an internally created photorealistic dish image rather than the current abstract CSS illustration. Do not lower the threshold or retry the same fixture.
 
 ## Explicitly deferred
 

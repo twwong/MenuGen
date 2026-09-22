@@ -2,18 +2,18 @@
   "schemaVersion": "1",
   "fixtures": [
     {
-      "id": "synthetic-menu-photo-v1",
+      "id": "synthetic-menu-photo-v2",
       "path": "tests/fixtures/live/synthetic-menu-photo.png",
       "mimeType": "image/png",
       "targetLanguage": "en",
-      "sha256": "298ae99ec542353f51bcefe45762e2728a83b1292ff442c6a65143b9745bc839"
+      "sha256": "6f5ed4b646e896d1c529375f19d3c057e2a18e6b22e1fefbe7783e5544c4d3af"
     },
     {
-      "id": "synthetic-menu-document-v1",
+      "id": "synthetic-menu-document-v2",
       "path": "tests/fixtures/live/synthetic-menu-document.pdf",
       "mimeType": "application/pdf",
       "targetLanguage": "en",
-      "sha256": "409fabbbb1e88d0dad023bbd3898cbd0134fc1af9ea424f747a084e14110c03a"
+      "sha256": "91eda4774bde149c833764182069107a2b75e60828e427f453f4b2d759f2fb0d"
     }
   ]
 }

@@ -41,12 +41,12 @@ await writeFile(pdfPath, Buffer.from(normalizedPdf, "latin1"));
 
 const fixtureDefinitions = [
   {
-    id: "synthetic-menu-photo-v1",
+    id: "synthetic-menu-photo-v2",
     fileName: "synthetic-menu-photo.png",
     mimeType: "image/png",
   },
   {
-    id: "synthetic-menu-document-v1",
+    id: "synthetic-menu-document-v2",
     fileName: "synthetic-menu-document.pdf",
     mimeType: "application/pdf",
   },
@@ -94,13 +94,18 @@ function menuDocument() {
       h1 { margin: 0; color: #7a3025; font-size: 58px; letter-spacing: .06em; }
       .subtitle { margin-top: 10px; font: 20px/1.4 system-ui, sans-serif; letter-spacing: .24em; color: #62564b; }
       h2 { margin: 42px 0 26px; font-size: 34px; color: #7a3025; }
-      .hero { display: grid; grid-template-columns: 1.05fr .95fr; gap: 34px; align-items: center; }
-      .dish-photo {
-        position: relative;
-        height: 410px;
+      .hero { display: grid; grid-template-columns: 1.08fr .92fr; gap: 34px; align-items: start; }
+      .photo-card {
+        margin: 0;
         overflow: hidden;
         border: 12px solid #fffaf0;
         box-shadow: 0 14px 34px rgba(52,35,20,.24);
+        background: #fffaf0;
+      }
+      .dish-photo {
+        position: relative;
+        height: 315px;
+        overflow: hidden;
         background: radial-gradient(circle at 50% 48%, #d5d0c0 0 34%, #42372d 35% 41%, #c6a66f 42% 60%, #4f7251 61% 66%, #252c22 67%);
       }
       .dish-photo::before {
@@ -111,11 +116,21 @@ function menuDocument() {
         background: linear-gradient(135deg, #6d3627, #b66436 46%, #4b251e 72%);
         box-shadow: -40px 38px 0 -22px #d6b56b, 55px -25px 0 -28px #dbe0bd;
       }
-      .dish-photo::after {
-        content: "AIではない合成テスト写真";
-        position: absolute; right: 12px; bottom: 9px;
-        padding: 6px 8px; background: rgba(255,255,255,.76);
-        font: 12px system-ui, sans-serif; color: #3e3832;
+      .photo-caption { padding: 4px 18px 2px; border-top: 3px solid #8c3c2e; }
+      .photo-caption .item { border-bottom: 0; }
+      .text-only-card {
+        margin-top: 64px;
+        padding: 10px 24px 18px;
+        border: 2px solid rgba(122,48,37,.38);
+        background: rgba(255,250,240,.7);
+      }
+      .text-only-label {
+        margin: 0;
+        padding-top: 14px;
+        font: 12px/1.3 system-ui, sans-serif;
+        letter-spacing: .16em;
+        text-transform: uppercase;
+        color: #7a6b5e;
       }
       .item { padding: 20px 0; border-bottom: 1px solid rgba(80,52,34,.25); }
       .item-line { display: flex; justify-content: space-between; gap: 24px; align-items: baseline; }
@@ -139,7 +154,11 @@ function menuDocument() {
         .subtitle { font-size: 13px; }
         h2 { margin: 22px 0 14px; font-size: 22px; }
         .hero { gap: 20px; }
-        .dish-photo { height: 245px; border-width: 7px; }
+        .photo-card { border-width: 7px; }
+        .dish-photo { height: 175px; }
+        .photo-caption { padding: 2px 10px 0; border-top-width: 2px; }
+        .text-only-card { margin-top: 35px; padding: 5px 14px 10px; }
+        .text-only-label { padding-top: 8px; font-size: 7px; }
         .item { padding: 11px 0; }
         .name { font-size: 18px; }
         .price { font-size: 17px; }
@@ -158,17 +177,22 @@ function menuDocument() {
       </header>
       <h2>おすすめ / Specials</h2>
       <section class="hero">
-        <div>
-          <div class="item">
-            <div class="item-line"><span class="name">鯖の味噌煮</span><span class="price">¥1,280</span></div>
-            <p class="description">味噌と生姜でじっくり煮込みました</p>
-          </div>
+        <figure class="photo-card">
+          <div class="dish-photo" aria-label="Synthetic source photo for the mackerel dish"></div>
+          <figcaption class="photo-caption">
+            <div class="item">
+              <div class="item-line"><span class="name">鯖の味噌煮</span><span class="price">¥1,280</span></div>
+              <p class="description">味噌と生姜でじっくり煮込みました</p>
+            </div>
+          </figcaption>
+        </figure>
+        <div class="text-only-card">
+          <p class="text-only-label">文字メニュー / Text-only selection</p>
           <div class="item">
             <div class="item-line"><span class="name">季節の野菜うどん</span><span class="price">¥980</span></div>
             <p class="description">季節野菜、うどん、だし</p>
           </div>
         </div>
-        <div class="dish-photo" aria-label="Synthetic source photo for the mackerel dish"></div>
       </section>
       <section class="columns">
         <div>

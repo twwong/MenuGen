@@ -5,6 +5,7 @@ import { z } from "zod";
 import {
   assertFixtureHash,
   runLiveBenchmark,
+  runLivePhotoAssociationBenchmark,
   validateLiveBenchmarkOptions,
   type LiveBenchmarkFixture,
 } from "../src/benchmark/live-benchmark";
@@ -32,7 +33,7 @@ const manifestSchema = z
 
 const textModel = "gpt-5.6-terra";
 const imageModel = "gpt-image-2.5-flare-2026-09-08";
-const { apiKey, maxUsd } = validateLiveBenchmarkOptions(
+const { apiKey, maxUsd, profile } = validateLiveBenchmarkOptions(
   process.argv.slice(2),
   process.env.OPENAI_API_KEY,
 );
@@ -120,28 +121,38 @@ const runId = new Date().toISOString().replaceAll(":", "-");
 const artifactDirectory = path.resolve("artifacts/benchmark-live", runId);
 await mkdir(artifactDirectory, { recursive: true });
 
-const report = await runLiveBenchmark({
-  fixtures,
-  providers: {
-    text: createProvider("low"),
-    imageLow: createProvider("low"),
-    imageMedium: createProvider("medium"),
-  },
-  maxUsd,
-  textModel,
-  imageModel,
-  saveImage: async (quality, image) => {
-    const match = /^data:image\/(webp|png|jpeg);base64,(.+)$/.exec(
-      image.assetRef,
-    );
-    if (!match) throw new Error("Generated image is not a supported data URL");
-    const extension = match[1] === "jpeg" ? "jpg" : match[1];
-    await writeFile(
-      path.join(artifactDirectory, `image-${quality}.${extension}`),
-      Buffer.from(match[2], "base64"),
-    );
-  },
-});
+const report =
+  profile === "photo-association"
+    ? await runLivePhotoAssociationBenchmark({
+        fixtures,
+        provider: createProvider("low"),
+        maxUsd,
+        textModel,
+      })
+    : await runLiveBenchmark({
+        fixtures,
+        providers: {
+          text: createProvider("low"),
+          imageLow: createProvider("low"),
+          imageMedium: createProvider("medium"),
+        },
+        maxUsd,
+        textModel,
+        imageModel,
+        saveImage: async (quality, image) => {
+          const match = /^data:image\/(webp|png|jpeg);base64,(.+)$/.exec(
+            image.assetRef,
+          );
+          if (!match) {
+            throw new Error("Generated image is not a supported data URL");
+          }
+          const extension = match[1] === "jpeg" ? "jpg" : match[1];
+          await writeFile(
+            path.join(artifactDirectory, `image-${quality}.${extension}`),
+            Buffer.from(match[2], "base64"),
+          );
+        },
+      });
 
 await writeFile(
   path.join(artifactDirectory, "report.json"),

@@ -1,5 +1,8 @@
 import type { MenuBenchmarkCase } from "@/benchmark/types";
-import { runMenuPipeline } from "@/pipeline/menu-pipeline";
+import {
+  isConfidentUsableSourcePhoto,
+  runMenuPipeline,
+} from "@/pipeline/menu-pipeline";
 import { FixtureAiProvider } from "@/providers/fixture/fixture-ai-provider";
 
 export interface BenchmarkCheck {
@@ -144,6 +147,17 @@ export async function runBenchmarkCase(
     )
     .map((item) => item.id);
   const actualGeneratedIds = result.imageContexts.map((item) => item.itemId);
+  const actualReusedSourcePhotoItemIds = result.menu.sourcePhotoCandidates
+    .filter(isConfidentUsableSourcePhoto)
+    .map((candidate) => candidate.association.itemId)
+    .filter((itemId): itemId is string => itemId !== null);
+  const actualReviewSourcePhotoCandidateIds = result.menu.sourcePhotoCandidates
+    .filter((candidate) =>
+      [candidate.region, candidate.association, candidate.usability].some(
+        (field) => field.needsReview || field.confidence < 0.85,
+      ),
+    )
+    .map((candidate) => candidate.id);
   const serializedMenu = JSON.stringify(result.menu).toLocaleLowerCase("en");
 
   const checks: BenchmarkCheck[] = [
@@ -161,6 +175,16 @@ export async function runBenchmarkCase(
       "only eligible items receive image prompts",
       actualGeneratedIds,
       benchmarkCase.expectations.generatedImageItemIds,
+    ),
+    equalityCheck(
+      "only confident source photos are reused",
+      actualReusedSourcePhotoItemIds,
+      benchmarkCase.expectations.reusedSourcePhotoItemIds,
+    ),
+    equalityCheck(
+      "ambiguous source photos remain reviewable",
+      actualReviewSourcePhotoCandidateIds,
+      benchmarkCase.expectations.reviewSourcePhotoCandidateIds,
     ),
     everyItemCheck(
       "price text is preserved exactly",
