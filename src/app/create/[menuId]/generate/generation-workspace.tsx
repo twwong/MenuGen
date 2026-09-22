@@ -208,9 +208,14 @@ export function GenerationWorkspace({
         </div>
 
         {ready ? (
-          <Link className="secondary-link" href="/create">
-            Start another menu
-          </Link>
+          <div className="generation-links">
+            <Link className="primary-button" href={`/create/${menuId}/result`}>
+              Open private result
+            </Link>
+            <Link className="secondary-link" href="/create/dashboard">
+              View dashboard
+            </Link>
+          </div>
         ) : null}
       </section>
 

@@ -70,6 +70,21 @@ test("creates and corrects an anonymous menu draft", async ({ page }) => {
   await page.getByRole("button", { name: "Try again · 2 left" }).click();
   await expect(page.getByText("Image unavailable")).not.toBeVisible();
   await expect(page.getByText("2 of 3")).toBeVisible();
+
+  await page.getByRole("link", { name: "Open private result" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Evening menu" }),
+  ).toBeVisible();
+  await expect(page.getByText("AI visual estimate")).toHaveCount(2);
+  await expect(page.getByText("Source menu image")).toBeVisible();
+  const resultAccessibility = await new AxeBuilder({ page }).analyze();
+  expect(resultAccessibility.violations).toEqual([]);
+
+  await page.getByRole("link", { name: "Back to dashboard" }).click();
+  await expect(page.getByRole("heading", { name: "Complete" })).toBeVisible();
+  page.once("dialog", (dialog) => dialog.accept());
+  await page.getByRole("button", { name: "Delete" }).click();
+  await expect(page.getByText("No private menus yet.")).toBeVisible();
 });
 
 test("creator upload page has no automatically detectable accessibility violations", async ({

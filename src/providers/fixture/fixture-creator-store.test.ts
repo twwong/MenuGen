@@ -6,6 +6,9 @@ import { hashAnonymousOwnershipToken } from "@/application/ownership";
 import {
   claimFixtureMenu,
   createFixtureDraft,
+  deleteFixtureMenu,
+  expireFixtureMenus,
+  getFixtureDeletionAudit,
   getFixtureGenerationView,
   getOwnedFixtureMenu,
   regenerateFixtureItem,
@@ -246,6 +249,67 @@ describe("fixture creator store", () => {
       reserved: 0,
       remaining: 3,
     });
+  });
+
+  it("records one completion event and deletes through an idempotent path", async () => {
+    const { menuId, userId } = createClaimedGenerationReadyDraft();
+    reserveAndStartFixtureGeneration({
+      menuId,
+      userId,
+      now: "2026-09-22T00:02:00.000Z",
+    });
+    await runFixtureGeneration(menuId, { delayMs: 0 });
+    await runFixtureGeneration(menuId, { delayMs: 0 });
+    expect(
+      getFixtureGenerationView({ menuId, anonymousToken: null, userId })
+        ?.completionEmailSent,
+    ).toBe(true);
+
+    const first = deleteFixtureMenu({
+      menuId,
+      userId,
+      now: "2026-09-23T00:00:00.000Z",
+      reason: "user_request",
+    });
+    const duplicate = deleteFixtureMenu({
+      menuId,
+      userId,
+      now: "2026-09-23T00:01:00.000Z",
+      reason: "user_request",
+    });
+    expect(duplicate).toEqual(first);
+    expect(
+      getOwnedFixtureMenu({ menuId, anonymousToken: null, userId }),
+    ).toBeNull();
+    expect(getFixtureDeletionAudit(menuId)).toEqual(first);
+    expect(JSON.stringify(first)).not.toMatch(/鯖|mackerel|claim-token/);
+    expect(Object.keys(first).sort()).toEqual(
+      [
+        "deletedAt",
+        "menuId",
+        "ownerUserId",
+        "reason",
+        "resultObjectCount",
+        "sanitizedResult",
+        "sourceObjectCount",
+        "tombstoneExpiresAt",
+      ].sort(),
+    );
+  });
+
+  it("expires completed results through the same deletion path", async () => {
+    const { menuId, userId } = createClaimedGenerationReadyDraft();
+    reserveAndStartFixtureGeneration({
+      menuId,
+      userId,
+      now: "2026-09-22T00:02:00.000Z",
+    });
+    await runFixtureGeneration(menuId, { delayMs: 0 });
+
+    expect(expireFixtureMenus(new Date("2100-01-01T00:00:00.000Z"))).toContain(
+      menuId,
+    );
+    expect(getFixtureDeletionAudit(menuId)?.reason).toBe("expiration");
   });
 });
 

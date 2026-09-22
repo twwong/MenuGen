@@ -24,6 +24,7 @@ import { targetLanguageSchema } from "@/domain/menu/menu-extraction";
 import {
   claimFixtureMenu,
   createFixtureDraft,
+  deleteFixtureMenu,
   getOwnedFixtureMenu,
   regenerateFixtureItem,
   reserveAndStartFixtureGeneration,
@@ -248,6 +249,21 @@ export async function regenerateFixtureItemAction(input: unknown) {
     now: new Date().toISOString(),
   });
   revalidatePath(`/create/${parsed.menuId}/generate`);
+}
+
+export async function deleteFixtureMenuAction(menuId: string) {
+  z.string().uuid().parse(menuId);
+  await assertSameOrigin();
+  const actor = await fixtureActor();
+  if (!actor.userId) throw new Error("authentication_required");
+  deleteFixtureMenu({
+    menuId,
+    userId: actor.userId,
+    now: new Date().toISOString(),
+    reason: "user_request",
+  });
+  revalidatePath("/create/dashboard");
+  return { menuId };
 }
 
 export async function getFixtureActor() {

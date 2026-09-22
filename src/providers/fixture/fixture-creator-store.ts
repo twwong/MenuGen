@@ -6,6 +6,7 @@ import {
   readFileSync,
   readdirSync,
   renameSync,
+  unlinkSync,
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
@@ -59,6 +60,9 @@ interface FixtureMenuRecord {
   reservationId: string | null;
   providerRequestStarted: boolean;
   estimatedCostUsd: number;
+  sourceDeletedAt: string;
+  completionEmailEventKey: string | null;
+  completionEmailSentAt: string | null;
 }
 
 interface StoredFixtureMenuRecord extends Omit<
@@ -86,6 +90,18 @@ export interface FixtureGenerationView {
   items: readonly FixtureGenerationItem[];
   quota: QuotaSummary | null;
   estimatedCostUsd: number;
+  completionEmailSent: boolean;
+}
+
+export interface FixtureDeletionAudit {
+  menuId: string;
+  ownerUserId: string | null;
+  reason: "user_request" | "expiration";
+  deletedAt: string;
+  tombstoneExpiresAt: string;
+  sourceObjectCount: number;
+  resultObjectCount: number;
+  sanitizedResult: "deleted";
 }
 
 declare global {
@@ -154,6 +170,9 @@ export function createFixtureDraft(input: {
     reservationId: null,
     providerRequestStarted: false,
     estimatedCostUsd: 0,
+    sourceDeletedAt: input.now,
+    completionEmailEventKey: null,
+    completionEmailSentAt: null,
   };
   store.set(record.id, record);
   persistRecord(record);
@@ -269,6 +288,17 @@ export function getFixtureGenerationView(input: {
       ? fixtureQuotaSummary(record.userId, input.now ?? new Date())
       : null,
     estimatedCostUsd: record.estimatedCostUsd,
+    completionEmailSent: record.completionEmailSentAt !== null,
+  };
+}
+
+export function getFixtureDashboard(input: { userId: string; now?: Date }) {
+  return {
+    menus: listOwnedFixtureMenus({
+      anonymousToken: null,
+      userId: input.userId,
+    }),
+    quota: fixtureQuotaSummary(input.userId, input.now ?? new Date()),
   };
 }
 
@@ -436,6 +466,7 @@ async function runFixtureGenerationOnce(
   completed.state = "ready";
   completed.expiresAt = addDays(new Date(), 30).toISOString();
   completed.updatedAt = new Date().toISOString();
+  recordFixtureCompletionEmail(completed, completed.updatedAt);
   persistRecord(completed);
 }
 
@@ -462,6 +493,100 @@ export function regenerateFixtureItem(input: {
   persistRecord(record);
 }
 
+export function deleteFixtureMenu(input: {
+  menuId: string;
+  userId: string;
+  now: string;
+  reason: "user_request" | "expiration";
+}): FixtureDeletionAudit {
+  const existingAudit = getFixtureDeletionAudit(input.menuId);
+  if (existingAudit) {
+    if (existingAudit.ownerUserId !== input.userId)
+      throw new Error("menu_not_found");
+    return existingAudit;
+  }
+  const record = getRecord(input.menuId);
+  if (!record || record.userId !== input.userId)
+    throw new Error("menu_not_found");
+  assertMenuTransition(record.state, "deleting");
+  record.state = "deleting";
+  persistRecord(record);
+  assertMenuTransition("deleting", "deleted");
+  const audit: FixtureDeletionAudit = {
+    menuId: record.id,
+    ownerUserId: record.userId,
+    reason: input.reason,
+    deletedAt: input.now,
+    tombstoneExpiresAt: addDays(new Date(input.now), 90).toISOString(),
+    sourceObjectCount: 0,
+    resultObjectCount: [...record.itemProvenance.values()].filter(Boolean)
+      .length,
+    sanitizedResult: "deleted",
+  };
+  persistDeletionAudit(audit);
+  store.delete(record.id);
+  try {
+    unlinkSync(recordPath(record.id));
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+  }
+  return audit;
+}
+
+export function expireFixtureMenus(now: Date): readonly string[] {
+  const expired: string[] = [];
+  for (const record of getAllRecords()) {
+    if (
+      record.userId &&
+      record.state === "ready" &&
+      record.expiresAt &&
+      new Date(record.expiresAt) <= now
+    ) {
+      deleteFixtureMenu({
+        menuId: record.id,
+        userId: record.userId,
+        now: now.toISOString(),
+        reason: "expiration",
+      });
+      expired.push(record.id);
+    }
+  }
+  return expired;
+}
+
+export function getFixtureDeletionAudit(
+  menuId: string,
+): FixtureDeletionAudit | null {
+  try {
+    return JSON.parse(
+      readFileSync(deletionAuditPath(menuId), "utf8"),
+    ) as FixtureDeletionAudit;
+  } catch {
+    return null;
+  }
+}
+
+export function pruneFixtureDeletionAudits(now: Date): number {
+  const directory = join(fixtureDirectory, "tombstones");
+  let deleted = 0;
+  try {
+    for (const name of readdirSync(directory)) {
+      if (!name.endsWith(".json")) continue;
+      const path = join(directory, name);
+      const audit = JSON.parse(
+        readFileSync(path, "utf8"),
+      ) as FixtureDeletionAudit;
+      if (new Date(audit.tombstoneExpiresAt) <= now) {
+        unlinkSync(path);
+        deleted += 1;
+      }
+    }
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+  }
+  return deleted;
+}
+
 function getRecord(menuId: string): FixtureMenuRecord | undefined {
   try {
     const stored = JSON.parse(
@@ -480,6 +605,9 @@ function getRecord(menuId: string): FixtureMenuRecord | undefined {
       reservationId: stored.reservationId ?? null,
       providerRequestStarted: stored.providerRequestStarted ?? false,
       estimatedCostUsd: stored.estimatedCostUsd ?? 0,
+      sourceDeletedAt: stored.sourceDeletedAt ?? stored.updatedAt,
+      completionEmailEventKey: stored.completionEmailEventKey ?? null,
+      completionEmailSentAt: stored.completionEmailSentAt ?? null,
     };
     store.set(menuId, record);
     return record;
@@ -502,7 +630,7 @@ function getAllRecords(): FixtureMenuRecord[] {
 
 function persistRecord(record: FixtureMenuRecord): void {
   mkdirSync(fixtureDirectory, { recursive: true, mode: 0o700 });
-  const destination = join(fixtureDirectory, `${record.id}.json`);
+  const destination = recordPath(record.id);
   const temporary = `${destination}.${randomUUID()}.tmp`;
   const stored: StoredFixtureMenuRecord = {
     ...record,
@@ -513,6 +641,32 @@ function persistRecord(record: FixtureMenuRecord): void {
   };
   writeFileSync(temporary, JSON.stringify(stored), { mode: 0o600 });
   renameSync(temporary, destination);
+}
+
+function recordFixtureCompletionEmail(
+  record: FixtureMenuRecord,
+  occurredAt: string,
+) {
+  if (!record.userId || record.completionEmailEventKey) return;
+  record.completionEmailEventKey = `menu:${record.id}:completion`;
+  record.completionEmailSentAt = occurredAt;
+}
+
+function persistDeletionAudit(audit: FixtureDeletionAudit) {
+  const directory = join(fixtureDirectory, "tombstones");
+  mkdirSync(directory, { recursive: true, mode: 0o700 });
+  const destination = deletionAuditPath(audit.menuId);
+  const temporary = `${destination}.${randomUUID()}.tmp`;
+  writeFileSync(temporary, JSON.stringify(audit), { mode: 0o600 });
+  renameSync(temporary, destination);
+}
+
+function recordPath(menuId: string) {
+  return join(fixtureDirectory, `${menuId}.json`);
+}
+
+function deletionAuditPath(menuId: string) {
+  return join(fixtureDirectory, "tombstones", `${menuId}.json`);
 }
 
 function isOwner(

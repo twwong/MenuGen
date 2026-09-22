@@ -2,7 +2,7 @@
 
 MenuGen turns menu photos or PDFs into translated, mobile-friendly visual menus while preserving source text, prices, uncertainty, and image provenance.
 
-Milestone 1 is complete. Milestone 2 is in progress. The deterministic creator proof now covers upload, exception-only review, anonymous draft claiming, rolling credits, source-photo reuse, partial generation failure, and uploader regeneration. Managed ingestion, durable production workflows, and lifecycle operations still need provisioned development services. The creator workflow remains disabled in public production until the protected preview passes acceptance testing. See `prd.md` for the product requirements and `docs/implementation-plan.md` for delivery order.
+Milestone 1 is complete. Milestone 2 is in progress. The deterministic creator proof now covers upload, exception-only review, anonymous draft claiming, rolling credits, source-photo reuse, partial generation failure, uploader regeneration, a resumable dashboard, private results, one-time completion events, and idempotent deletion/expiry. Managed ingestion and durable production workflows still need provisioned development services. The creator workflow remains disabled in public production until the protected preview passes acceptance testing. See `prd.md` for the product requirements and `docs/implementation-plan.md` for delivery order.
 
 ## Local development
 
