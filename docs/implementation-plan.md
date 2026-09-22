@@ -1,6 +1,6 @@
 # MenuGen Implementation Plan
 
-**Current status:** Milestone 1 is complete. Milestone 2 is in progress. The deterministic creator proof runs from ordered upload through review, one-time anonymous claim, quota reservation/consumption, source-photo reuse, independent item generation, visible partial failure, uploader regeneration, a resumable dashboard, a private result, one-time completion, and idempotent deletion/expiry. The managed path now implements the same journey across Clerk, Neon, private Blob stores, Transloadit, Vercel Workflow, Upstash, Resend, and OpenAI. The Clerk development application and Singapore Neon development database are provisioned, and all committed migrations are applied. Remaining service provisioning, protected-preview integration tests, and manually approved live smoke tests remain open.
+**Current status:** Milestone 1 is complete. Milestone 2 is in progress. The deterministic creator proof runs from ordered upload through review, one-time anonymous claim, quota reservation/consumption, source-photo reuse, independent item generation, visible partial failure, uploader regeneration, a resumable dashboard, a private result, one-time completion, and idempotent deletion/expiry. The managed path now implements the same journey across Clerk, Neon, private Blob stores, Transloadit, Vercel Workflow, Upstash, Resend, and OpenAI. Clerk, the Singapore Neon development database, and separate private Singapore Blob stores for source and result assets are provisioned; all committed migrations are applied. Remaining service provisioning, protected-preview integration tests, and manually approved live smoke tests remain open.
 
 ## Goal
 
@@ -36,7 +36,7 @@ Initial implementation choices:
 - Use runtime schemas at every AI and external-service boundary.
 - Keep the core menu model usable without a live AI provider so fixtures and benchmark cases can drive development.
 
-The auth, storage, job, email, analytics, and monitoring vendors remain open until short spikes confirm deletion behavior, time limits, cost, data handling, and local development experience.
+The selected auth, storage, job, and email vendors remain feature-gated until short spikes confirm deletion behavior, time limits, cost, data handling, and local development experience. Analytics and monitoring remain open choices.
 
 ## Milestone 0: Repository foundation
 
@@ -99,7 +99,7 @@ The first slice may use fixture files instead of uploads, authentication, persis
 
 ## Milestone 2: Creator workflow
 
-**Status:** In progress (foundation slice implemented locally; external provisioning pending approval)
+**Status:** In progress (foundation implemented; approved development provisioning underway)
 
 ### Deliverables
 

@@ -17,7 +17,7 @@ Original menu uploads are temporary processing inputs. Source-photo crops and ge
 - Keep only content-free deletion tombstones for 90 days: opaque menu ID, asset class, reason, outcome, sanitized code, and timestamps.
 - Transloadit temporary copies use one-day Assembly retention; they are not treated as application storage.
 
-The workflow code now shares one idempotent deletion path across user deletion and scheduled expiry, deletes normalized sources after durable revisions and crops exist, and schedules the 24-hour backstop plus 90-day audit pruning. Remote deletion evidence is still unverified.
+The workflow code now shares one idempotent deletion path across user deletion and scheduled expiry, deletes normalized sources after durable revisions and crops exist, and schedules the 24-hour backstop plus 90-day audit pruning. Separate private source and result stores were provisioned in Vercel's Singapore region on 2026-09-22. Their separation is verified; remote upload, delivery, and deletion evidence is still unverified.
 
 ## Consequences
 

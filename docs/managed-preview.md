@@ -1,8 +1,8 @@
 # Managed creator preview
 
-The managed creator path is implemented but deliberately unprovisioned. Do not
-flip `CREATOR_BACKEND=managed` until every development resource below exists and
-the database migrations are applied.
+The managed creator path is implemented and partially provisioned. Do not flip
+`CREATOR_BACKEND=managed` until every development resource below exists and the
+database migrations are applied.
 
 Each numbered provisioning step is a separate external action and needs fresh
 approval before it runs. Prefer Singapore-hosted resources where the vendor
@@ -12,7 +12,7 @@ offers a region choice. Never print, commit, or copy secret values into reports.
 
 1. [x] Create the Clerk development application with email codes and Google sign-in.
 2. [x] Create the Singapore Neon project and apply committed Drizzle migrations.
-3. Create separate private Vercel Blob stores for sources and results.
+3. [x] Create separate private Vercel Blob stores for sources and results.
 4. Create the Transloadit template and callback credentials with one-day Assembly retention.
 5. Create the Singapore Upstash Redis database.
 6. Configure Resend's development sender.
@@ -29,6 +29,14 @@ Drizzle applied all three committed migrations to the development database;
 verification found 12 application tables plus the Drizzle migration journal.
 The privileged connection string exists only in the ignored local environment
 file.
+
+Vercel Blob was provisioned on 2026-09-22 as two private Singapore (`sin1`)
+stores: `menugen-source-assets-dev` and `menugen-result-assets-dev`. Both are
+connected to the `menugen` project for Development and Preview only, using the
+separate `SOURCE_BLOB_*` and `RESULT_BLOB_*` environment prefixes. Read/write
+tokens exist only in Vercel's sensitive environment settings and the ignored
+local environment file. Production is not connected. Remote upload, private
+delivery, and deletion behavior still need protected-preview verification.
 
 The environment key names are documented in `.env.example`. Validate presence,
 not values. Keep `CREATOR_WORKFLOW_ENABLED=false` in public production.
