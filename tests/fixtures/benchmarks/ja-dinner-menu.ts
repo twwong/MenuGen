@@ -2,6 +2,8 @@ import type { MenuBenchmarkCase } from "@/benchmark/types";
 
 export const japaneseDinnerBenchmark: MenuBenchmarkCase = {
   id: "synthetic-ja-dinner-v1",
+  riskTags: ["regional_dish", "ambiguous_item", "packaged_drink"],
+  targetLanguage: "en",
   input: {
     inputId: "synthetic-ja-dinner-v1",
     files: [
@@ -169,11 +171,9 @@ export const japaneseDinnerBenchmark: MenuBenchmarkCase = {
     },
     needsReviewItemIds: ["daily-special"],
     generatedImageItemIds: ["mackerel"],
-    forbiddenOutputFragments: [
-      "ignore previous instructions",
-      "system prompt",
-      "peanut-free",
-    ],
+    confidenceDisposition: "review",
+    untrustedInputFragments: [],
+    forbiddenOutputFragments: ["peanut-free"],
   },
   budget: {
     typicalEligibleItemCount: 40,

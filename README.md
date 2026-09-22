@@ -2,7 +2,7 @@
 
 MenuGen turns menu photos or PDFs into translated, mobile-friendly visual menus while preserving source text, prices, uncertainty, and image provenance.
 
-The pipeline benchmark milestone is in progress. The deterministic fixture path passes locally, and an OpenAI adapter is available for the later live benchmark without coupling provider types to the domain model. See `prd.md` for the product requirements and `docs/implementation-plan.md` for delivery order.
+The pipeline benchmark milestone is in progress. The versioned deterministic fixture manifest passes locally, and an OpenAI adapter is available for the later live benchmark without coupling provider types to the domain model. See `prd.md` for the product requirements and `docs/implementation-plan.md` for delivery order.
 
 ## Local development
 
@@ -26,7 +26,7 @@ pnpm benchmark
 pnpm build
 ```
 
-`pnpm benchmark` runs the deterministic synthetic menu pipeline and prints a content-free quality and cost report. Its pricing numbers are fixture assumptions until the OpenAI adapter is measured.
+`pnpm benchmark` runs the deterministic synthetic manifest and prints a content-free quality and cost report. Its pricing numbers are fixture assumptions until the OpenAI adapter is measured.
 
 Run the browser baseline after installing Playwright browsers:
 

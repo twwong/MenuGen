@@ -6,9 +6,9 @@ Run the deterministic benchmark with:
 pnpm benchmark
 ```
 
-The command emits a JSON report containing checks, item counts, eligible-image counts, normalized provider-stage metadata, and a projected typical-menu cost. It deliberately excludes menu text, translations, prompts, filenames, and source references from the report format.
+The command runs the versioned fixture manifest and emits a JSON report containing per-case checks, aggregate counts, confidence disposition, token/image usage, latency, and projected typical-menu cost. One broken case is reported without stopping the remaining cases. The report deliberately excludes menu text, translations, prompts, filenames, source references, and raw error messages.
 
-## Current synthetic case
+## Current synthetic manifest
 
 `synthetic-ja-dinner-v1` contains three items:
 
@@ -16,9 +16,21 @@ The command emits a JSON report containing checks, item counts, eligible-image c
 - An ambiguous daily special that remains marked for review
 - Packaged beer that remains image-free
 
-The case checks exact item order, price text, expected translations, explicit source claims, uncertainty, image eligibility, forbidden prompt-injection fragments, and the $2 typical-menu ceiling.
+`synthetic-adversarial-glare-v1` represents a mixed-language menu with glare, critically uncertain fields, and non-menu prompt-injection text. It verifies that the attack text and invented safety claims stay absent, uncertainty remains flagged, and rejected input produces no image prompts.
 
-The fixture provider also implements image-generation and moderation contracts, but the current pipeline stops after prompt construction. No images are generated and no external AI service is called.
+Both cases check exact item order, price text, expected translations, explicit source claims, uncertainty, image eligibility, and the $2 typical-menu ceiling.
+
+## Provisional confidence policy
+
+Policy version 1 uses calibration starting points, not launch-quality claims:
+
+- Fields below `0.85` must be marked for review.
+- A menu is rejected before image prompt construction when any modeled field is below `0.50`, at least half of modeled fields need review, or no items were extracted.
+- Otherwise, a menu with flagged fields receives a `review` disposition; a fully clear menu receives `accept`.
+
+These thresholds must be recalibrated with live provider results and representative source files. Price confidence and source-photo association confidence still need explicit schema coverage before Milestone 1 is complete.
+
+The fixture provider also implements image-generation and moderation contracts, but the current benchmark stops after prompt construction for non-rejected menus. No images are generated and no external AI service is called.
 
 ## OpenAI adapter
 

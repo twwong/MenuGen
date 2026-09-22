@@ -4,6 +4,10 @@ import {
   type MenuExtractionV1,
   type TargetLanguage,
 } from "@/domain/menu/menu-extraction";
+import {
+  assessMenuConfidence,
+  type MenuConfidenceAssessment,
+} from "@/domain/menu/confidence-policy";
 import { buildDishImageContext } from "@/pipeline/image-prompt";
 import { mergeMenuTranslation } from "@/pipeline/merge-menu-translation";
 import {
@@ -16,6 +20,7 @@ import {
 
 export interface MenuPipelineResult {
   menu: MenuExtractionV1;
+  confidenceAssessment: MenuConfidenceAssessment;
   imageContexts: DishImageContext[];
   stages: ProviderMetadata[];
 }
@@ -51,13 +56,19 @@ export async function runMenuPipeline(options: {
   }
 
   const menu = mergeMenuTranslation(source, translated);
-  const imageContexts = menu.sections.flatMap((section) =>
-    section.items
-      .filter((item) =>
-        ["prepared_food", "prepared_drink"].includes(item.imageEligibility),
-      )
-      .map(buildDishImageContext),
-  );
+  const confidenceAssessment = assessMenuConfidence(menu);
+  const imageContexts =
+    confidenceAssessment.disposition === "reject"
+      ? []
+      : menu.sections.flatMap((section) =>
+          section.items
+            .filter((item) =>
+              ["prepared_food", "prepared_drink"].includes(
+                item.imageEligibility,
+              ),
+            )
+            .map(buildDishImageContext),
+        );
 
-  return { menu, imageContexts, stages };
+  return { menu, confidenceAssessment, imageContexts, stages };
 }

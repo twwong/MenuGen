@@ -10,9 +10,18 @@ export interface BenchmarkCheck {
 
 export interface BenchmarkReport {
   caseId: string;
+  riskTags: string[];
   passed: boolean;
   pricingBasis: "fixture_assumption";
   checks: BenchmarkCheck[];
+  confidence: {
+    policyVersion: string;
+    disposition: string;
+    fieldCount: number;
+    reviewFieldCount: number;
+    unflaggedLowConfidenceCount: number;
+    lowestConfidence: number | null;
+  };
   metrics: {
     itemCount: number;
     eligibleImageCount: number;
@@ -26,7 +35,91 @@ export interface BenchmarkReport {
     model: string;
     latencyMs: number;
     estimatedCostUsd: number;
+    usage: {
+      inputTokens: number;
+      outputTokens: number;
+      images: number;
+    };
   }>;
+}
+
+export interface BenchmarkExecutionFailure {
+  caseId: string;
+  riskTags: string[];
+  passed: false;
+  failure: {
+    code: "case_execution_failed";
+  };
+}
+
+export interface BenchmarkManifestReport {
+  schemaVersion: "1";
+  manifestVersion: string;
+  passed: boolean;
+  pricingBasis: "fixture_assumption";
+  summary: {
+    caseCount: number;
+    passedCaseCount: number;
+    failedCaseCount: number;
+    itemCount: number;
+    eligibleImageCount: number;
+    observedFixtureCostUsd: number;
+    maximumProjectedTypicalMenuCostUsd: number;
+  };
+  cases: Array<BenchmarkReport | BenchmarkExecutionFailure>;
+}
+
+export async function runBenchmarkManifest(
+  manifest: readonly MenuBenchmarkCase[],
+  manifestVersion: string,
+): Promise<BenchmarkManifestReport> {
+  assertUniqueCaseIds(manifest);
+  const cases = await Promise.all(
+    manifest.map(async (benchmarkCase) => {
+      try {
+        return await runBenchmarkCase(benchmarkCase);
+      } catch {
+        return {
+          caseId: benchmarkCase.id,
+          riskTags: [...benchmarkCase.riskTags],
+          passed: false as const,
+          failure: { code: "case_execution_failed" as const },
+        };
+      }
+    }),
+  );
+  const completed = cases.filter(
+    (result): result is BenchmarkReport => "metrics" in result,
+  );
+  const passedCaseCount = cases.filter((result) => result.passed).length;
+
+  return {
+    schemaVersion: "1",
+    manifestVersion,
+    passed: passedCaseCount === cases.length,
+    pricingBasis: "fixture_assumption",
+    summary: {
+      caseCount: cases.length,
+      passedCaseCount,
+      failedCaseCount: cases.length - passedCaseCount,
+      itemCount: sum(completed.map((result) => result.metrics.itemCount)),
+      eligibleImageCount: sum(
+        completed.map((result) => result.metrics.eligibleImageCount),
+      ),
+      observedFixtureCostUsd: roundUsd(
+        sum(completed.map((result) => result.metrics.observedFixtureCostUsd)),
+      ),
+      maximumProjectedTypicalMenuCostUsd: roundUsd(
+        Math.max(
+          0,
+          ...completed.map(
+            (result) => result.metrics.projectedTypicalMenuCostUsd,
+          ),
+        ),
+      ),
+    },
+    cases,
+  };
 }
 
 export async function runBenchmarkCase(
@@ -36,7 +129,7 @@ export async function runBenchmarkCase(
   const result = await runMenuPipeline({
     provider,
     input: benchmarkCase.input,
-    targetLanguage: "en",
+    targetLanguage: benchmarkCase.targetLanguage,
   });
   const items = result.menu.sections.flatMap((section) => section.items);
   const itemById = new Map(items.map((item) => [item.id, item]));
@@ -82,13 +175,25 @@ export async function runBenchmarkCase(
       benchmarkCase.expectations.sourceClaimsByItemId,
       (item) => item.explicitSourceClaims,
     ),
+    absenceCheck(
+      "declared untrusted instructions stay absent",
+      serializedMenu,
+      benchmarkCase.expectations.untrustedInputFragments,
+    ),
+    absenceCheck(
+      "invented safety claims stay absent",
+      serializedMenu,
+      benchmarkCase.expectations.forbiddenOutputFragments,
+    ),
+    equalityCheck(
+      "confidence disposition matches the expected outcome",
+      result.confidenceAssessment.disposition,
+      benchmarkCase.expectations.confidenceDisposition,
+    ),
     {
-      name: "untrusted instructions and invented safety claims stay absent",
-      passed: benchmarkCase.expectations.forbiddenOutputFragments.every(
-        (fragment) =>
-          !serializedMenu.includes(fragment.toLocaleLowerCase("en")),
-      ),
-      detail: `${benchmarkCase.expectations.forbiddenOutputFragments.length} forbidden fragments checked`,
+      name: "low-confidence fields are never silently accepted",
+      passed: result.confidenceAssessment.unflaggedLowConfidenceCount === 0,
+      detail: `${result.confidenceAssessment.unflaggedLowConfidenceCount} unflagged low-confidence fields`,
     },
   ];
 
@@ -112,9 +217,11 @@ export async function runBenchmarkCase(
 
   return {
     caseId: benchmarkCase.id,
+    riskTags: [...benchmarkCase.riskTags],
     passed: checks.every((check) => check.passed),
     pricingBasis: "fixture_assumption",
     checks,
+    confidence: result.confidenceAssessment,
     metrics: {
       itemCount: items.length,
       eligibleImageCount: result.imageContexts.length,
@@ -128,8 +235,19 @@ export async function runBenchmarkCase(
       model: stage.model,
       latencyMs: stage.latencyMs,
       estimatedCostUsd: stage.estimatedCostUsd,
+      usage: stage.usage,
     })),
   };
+}
+
+function assertUniqueCaseIds(manifest: readonly MenuBenchmarkCase[]) {
+  const ids = new Set<string>();
+  for (const benchmarkCase of manifest) {
+    if (ids.has(benchmarkCase.id)) {
+      throw new Error(`Duplicate benchmark case ID: ${benchmarkCase.id}`);
+    }
+    ids.add(benchmarkCase.id);
+  }
 }
 
 function equalityCheck(
@@ -142,6 +260,16 @@ function equalityCheck(
     name,
     passed,
     detail: passed ? "matched" : "mismatch",
+  };
+}
+
+function absenceCheck(name: string, serializedMenu: string, values: string[]) {
+  return {
+    name,
+    passed: values.every(
+      (value) => !serializedMenu.includes(value.toLocaleLowerCase("en")),
+    ),
+    detail: `${values.length} ${values.length === 1 ? "fragment" : "fragments"} checked`,
   };
 }
 

@@ -1,6 +1,6 @@
 # MenuGen Implementation Plan
 
-**Current status:** Pipeline benchmark in progress. The deterministic path and initial OpenAI adapter are complete.
+**Current status:** Pipeline benchmark in progress. The versioned deterministic manifest, initial confidence policy, and OpenAI adapter are complete.
 
 ## Goal
 
@@ -199,6 +199,9 @@ Record each accepted choice in `docs/decisions/`.
 - [x] Add one synthetic bilingual menu benchmark case.
 - [x] Build the benchmark runner and cost-report format.
 - [x] Add the OpenAI adapter only after the deterministic pipeline passes locally.
+- [x] Add difficult-input and prompt-injection coverage to a versioned manifest.
+- [x] Define provisional confidence and rejection thresholds.
+- [ ] Measure the OpenAI adapter against representative source files.
 
 ## Explicitly deferred
 
