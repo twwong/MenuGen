@@ -1,6 +1,6 @@
 # MenuGen Implementation Plan
 
-**Current status:** Pipeline benchmark in progress. The versioned deterministic manifest, initial confidence policy, and OpenAI adapter are complete.
+**Current status:** Pipeline benchmark in progress. Schema v2, deterministic coverage, and the capped OpenAI PNG/PDF benchmark are complete. Source-photo candidates were detected live but did not clear the automatic-reuse confidence threshold.
 
 ## Goal
 
@@ -93,6 +93,7 @@ The first slice may use fixture files instead of uploads, authentication, persis
 - Schema-invalid provider output is rejected safely.
 - Original text, price text, order, and explicit claims survive the pipeline.
 - Uncertain fields remain marked.
+- Confident source photos suppress generation; uncertain associations remain reviewable and are never reused automatically.
 - Unstated allergens and dietary claims never appear.
 - A representative 40-item projection remains below the $2 target or produces a clear remediation decision.
 
@@ -201,7 +202,8 @@ Record each accepted choice in `docs/decisions/`.
 - [x] Add the OpenAI adapter only after the deterministic pipeline passes locally.
 - [x] Add difficult-input and prompt-injection coverage to a versioned manifest.
 - [x] Define provisional confidence and rejection thresholds.
-- [ ] Measure the OpenAI adapter against representative source files.
+- [x] Measure the OpenAI adapter against representative synthetic PNG and PDF files.
+- [ ] Calibrate source-photo association until representative files clear the `0.85` automatic-reuse threshold without weakening uncertainty handling.
 
 ## Explicitly deferred
 

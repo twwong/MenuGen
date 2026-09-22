@@ -8,7 +8,7 @@ pnpm benchmark
 
 The command runs the versioned fixture manifest and emits a JSON report containing per-case checks, aggregate counts, confidence disposition, token/image usage, latency, and projected typical-menu cost. One broken case is reported without stopping the remaining cases. The report deliberately excludes menu text, translations, prompts, filenames, source references, and raw error messages.
 
-## Current synthetic manifest
+## Deterministic synthetic manifest
 
 `synthetic-ja-dinner-v1` contains three items:
 
@@ -18,19 +18,43 @@ The command runs the versioned fixture manifest and emits a JSON report containi
 
 `synthetic-adversarial-glare-v1` represents a mixed-language menu with glare, critically uncertain fields, and non-menu prompt-injection text. It verifies that the attack text and invented safety claims stay absent, uncertainty remains flagged, and rejected input produces no image prompts.
 
-Both cases check exact item order, price text, expected translations, explicit source claims, uncertainty, image eligibility, and the $2 typical-menu ceiling.
+Both cases use extraction schema v2 and check exact item order, confidence-aware price text, expected translations, explicit source claims, source-photo handling, image eligibility, and the $2 typical-menu ceiling.
 
 ## Provisional confidence policy
 
-Policy version 1 uses calibration starting points, not launch-quality claims:
+Policy version 2 uses calibration starting points, not launch-quality claims:
 
 - Fields below `0.85` must be marked for review.
-- A menu is rejected before image prompt construction when any modeled field is below `0.50`, at least half of modeled fields need review, or no items were extracted.
+- A menu is rejected before image prompt construction when any critical source field, including price, is below `0.50`, at least half of critical fields need review, or no items were extracted.
+- Source-photo region, association, and usability fields below `0.85` require review but do not reject the whole menu.
 - Otherwise, a menu with flagged fields receives a `review` disposition; a fully clear menu receives `accept`.
 
-These thresholds must be recalibrated with live provider results and representative source files. Price confidence and source-photo association confidence still need explicit schema coverage before Milestone 1 is complete.
+The schema now covers price and source-photo confidence explicitly. The threshold remains provisional because the first live run found the source photo in both fixtures but did not clear every automatic-reuse confidence field.
 
-The fixture provider also implements image-generation and moderation contracts, but the current benchmark stops after prompt construction for non-rejected menus. No images are generated and no external AI service is called.
+The fixture provider also implements image-generation and moderation contracts, but `pnpm benchmark` stops after prompt construction. It never calls an external service.
+
+## Opt-in live benchmark
+
+Run only with an OpenAI project configured for the intended spend:
+
+```bash
+pnpm benchmark:live -- --confirm-spend --max-usd 2
+```
+
+The command validates committed fixture hashes and refuses to run without `OPENAI_API_KEY`, the exact confirmation flag, or a cap between zero and $2. It reserves at most $1.60 across two extraction, two translation, one low-quality image, and one medium-quality image call. Calls are not retried. Synthetic allowlisted fixtures bypass the production moderation pipeline; they are not user uploads and are never published.
+
+The 2026-09-22 run used `gpt-5.6-terra` and `gpt-image-2.5-flare-2026-09-08`. Terra is documented at $2 per million input tokens and $12 per million output tokens; Flare is documented at $5 per million text-input tokens, $8 per million image-input tokens, and $30 per million image-output tokens. See the official [Terra model page](https://developers.openai.com/api/docs/models/gpt-5.6-terra) and [Flare model page](https://developers.openai.com/api/docs/models/gpt-image-2.5-flare).
+
+Measured result:
+
+- Total estimated provider cost: `$0.072602`
+- Conservative 40-image medium-quality projection: `$0.575582`
+- Low image: `$0.006435`, 9.23 seconds, 196 image-output tokens
+- Medium image: `$0.013725`, 11.95 seconds, 439 image-output tokens
+- Both formats preserved item order and prices, flagged the ambiguous price, excluded prompt-injection text, and produced a generation candidate.
+- Both formats detected one source-photo candidate, but one photo confidence field remained reviewable, so automatic reuse correctly stayed disabled.
+
+The live report therefore failed the complete Milestone 1 gate even though cost, extraction, translation, and generated-image checks passed. The next benchmark change is source-photo association calibration—not lowering the `0.85` threshold.
 
 ## OpenAI adapter
 
@@ -39,13 +63,11 @@ The fixture provider also implements image-generation and moderation contracts, 
 - Extraction and translation use strict structured outputs, then validate the normalized result again with the domain schemas.
 - Menu files are passed as provider-readable HTTPS URLs or matching base64 data URLs. Other reference schemes are rejected before a request.
 - Responses are created with storage disabled, and prompts explicitly treat menu text as untrusted data.
-- Model IDs, image settings, and pricing inputs are required configuration. Cost metadata therefore reflects an explicit benchmark assumption instead of a hidden, stale rate table.
+- Model IDs, image settings, and pricing inputs are required configuration. Text and image token details are normalized into provider metadata; a configured flat image estimate is used only if the provider omits usage.
 - The Moderations API accepts menu images but not PDFs. A raw PDF moderation attempt is reported as `needs_review`; it is never mislabeled as allowed.
 - Generated bytes are returned as a temporary data URL until the creator-workflow milestone adds durable object storage.
 
-## Cost warning
-
-Current prices are fixture assumptions used to prove the accounting path. They are not claims about OpenAI pricing. The projection becomes evidence only after the production adapter records real model identifiers, usage, latency, and estimated cost.
+Live rates are intentionally explicit code configuration, not fetched dynamically. Recheck official pricing before relying on a later run. Provider-side project limits remain the absolute spend control because an application cannot undo a completed provider call.
 
 ## Adding cases
 

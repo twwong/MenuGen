@@ -7,7 +7,7 @@ import {
 } from "./openai-ai-provider";
 
 const parsedSourceMenu = {
-  schemaVersion: "1",
+  schemaVersion: "2",
   sourceLanguage: "ja",
   title: null,
   sections: [
@@ -29,18 +29,23 @@ const parsedSourceMenu = {
             needsReview: false,
           },
           description: null,
-          priceText: "¥1,280",
+          price: {
+            sourceText: "¥1,280",
+            confidence: 0.99,
+            needsReview: false,
+          },
           explicitSourceClaims: ["味噌"],
           imageEligibility: "prepared_food",
         },
       ],
     },
   ],
+  sourcePhotoCandidates: [],
 } as const;
 
 const parsedTranslation = {
-  schemaVersion: "1",
-  sourceSchemaVersion: "1",
+  schemaVersion: "2",
+  sourceSchemaVersion: "2",
   targetLanguage: "en",
   title: null,
   sections: [
@@ -94,7 +99,9 @@ describe("OpenAiProvider", () => {
 
     expect(extraction.data.title).toBeUndefined();
     expect(extraction.data.sections[0].items[0].description).toBeUndefined();
-    expect(extraction.data.sections[0].items[0].priceText).toBe("¥1,280");
+    expect(extraction.data.sections[0].items[0].price?.sourceText).toBe(
+      "¥1,280",
+    );
     expect(extraction.metadata.estimatedCostUsd).toBeCloseTo(0.0006);
     expect(extraction.metadata.usage).toEqual({
       inputTokens: 100,
@@ -224,6 +231,15 @@ describe("OpenAiProvider", () => {
       usage: {
         input_tokens: 20,
         output_tokens: 100,
+        total_tokens: 120,
+        input_tokens_details: {
+          text_tokens: 20,
+          image_tokens: 0,
+        },
+        output_tokens_details: {
+          text_tokens: 0,
+          image_tokens: 100,
+        },
       },
     });
 
@@ -242,10 +258,38 @@ describe("OpenAiProvider", () => {
       height: 1024,
       provenance: "generated",
     });
-    expect(result.metadata.estimatedCostUsd).toBe(0.04);
+    expect(result.metadata.estimatedCostUsd).toBeCloseTo(0.0031);
     expect(result.metadata.usage).toEqual({
       inputTokens: 20,
       outputTokens: 100,
+      images: 1,
+      textInputTokens: 20,
+      imageInputTokens: 0,
+      imageOutputTokens: 100,
+    });
+  });
+
+  it("uses the configured image fallback only when usage is absent", async () => {
+    const { provider, imagesGenerate } = createProvider();
+    imagesGenerate.mockResolvedValue({
+      created: 1,
+      data: [{ b64_json: "aW1hZ2U=" }],
+      output_format: "webp",
+      size: "1024x1024",
+    });
+
+    const result = await provider.generateDishImage({
+      itemId: "item-000-000",
+      sourceName: "鯖の味噌煮",
+      translatedName: "Miso-braised mackerel",
+      explicitSourceClaims: ["味噌"],
+      prompt: "Create a neutral visual estimate.",
+    });
+
+    expect(result.metadata.estimatedCostUsd).toBe(0.04);
+    expect(result.metadata.usage).toEqual({
+      inputTokens: 0,
+      outputTokens: 0,
       images: 1,
     });
   });
@@ -288,7 +332,10 @@ function createProvider() {
     pricing: {
       textInputUsdPerMillionTokens: 2,
       textOutputUsdPerMillionTokens: 8,
-      imageGenerationUsd: 0.04,
+      imageTextInputUsdPerMillionTokens: 5,
+      imageInputUsdPerMillionTokens: 8,
+      imageOutputUsdPerMillionTokens: 30,
+      imageGenerationFallbackUsd: 0.04,
       moderationRequestUsd: 0,
     },
     image: {

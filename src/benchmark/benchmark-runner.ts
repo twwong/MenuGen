@@ -136,7 +136,12 @@ export async function runBenchmarkCase(
 
   const actualOrder = items.map((item) => item.id);
   const actualReviewIds = items
-    .filter((item) => item.name.needsReview || item.description?.needsReview)
+    .filter(
+      (item) =>
+        item.name.needsReview ||
+        item.description?.needsReview ||
+        item.price?.needsReview,
+    )
     .map((item) => item.id);
   const actualGeneratedIds = result.imageContexts.map((item) => item.itemId);
   const serializedMenu = JSON.stringify(result.menu).toLocaleLowerCase("en");
@@ -161,7 +166,7 @@ export async function runBenchmarkCase(
       "price text is preserved exactly",
       itemById,
       benchmarkCase.expectations.priceTextByItemId,
-      (item) => item.priceText,
+      (item) => item.price?.sourceText,
     ),
     everyItemCheck(
       "translations match the expected benchmark",
@@ -278,7 +283,7 @@ function everyItemCheck<T>(
   itemById: Map<
     string,
     {
-      priceText?: string;
+      price?: { sourceText: string };
       name: { translatedText: string };
       explicitSourceClaims: string[];
     }

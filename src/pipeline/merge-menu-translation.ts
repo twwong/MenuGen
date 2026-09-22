@@ -1,14 +1,14 @@
 import {
-  menuExtractionV1Schema,
-  type MenuExtractionV1,
-  type MenuSourceExtractionV1,
-  type MenuTranslationV1,
+  menuExtractionV2Schema,
+  type MenuExtractionV2,
+  type MenuSourceExtractionV2,
+  type MenuTranslationV2,
 } from "@/domain/menu/menu-extraction";
 
 export function mergeMenuTranslation(
-  source: MenuSourceExtractionV1,
-  translation: MenuTranslationV1,
-): MenuExtractionV1 {
+  source: MenuSourceExtractionV2,
+  translation: MenuTranslationV2,
+): MenuExtractionV2 {
   const translatedSections = uniqueIndex(
     translation.sections,
     (section) => section.sectionId,
@@ -67,8 +67,8 @@ export function mergeMenuTranslation(
     throw new Error("Menu title alignment mismatch");
   }
 
-  return menuExtractionV1Schema.parse({
-    schemaVersion: "1",
+  return menuExtractionV2Schema.parse({
+    schemaVersion: "2",
     sourceLanguage: source.sourceLanguage,
     targetLanguage: translation.targetLanguage,
     title:
@@ -76,6 +76,7 @@ export function mergeMenuTranslation(
         ? mergeField(source.title, translation.title)
         : undefined,
     sections,
+    sourcePhotoCandidates: source.sourcePhotoCandidates,
   });
 }
 

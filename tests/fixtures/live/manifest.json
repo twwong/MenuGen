@@ -1,0 +1,19 @@
+{
+  "schemaVersion": "1",
+  "fixtures": [
+    {
+      "id": "synthetic-menu-photo-v1",
+      "path": "tests/fixtures/live/synthetic-menu-photo.png",
+      "mimeType": "image/png",
+      "targetLanguage": "en",
+      "sha256": "298ae99ec542353f51bcefe45762e2728a83b1292ff442c6a65143b9745bc839"
+    },
+    {
+      "id": "synthetic-menu-document-v1",
+      "path": "tests/fixtures/live/synthetic-menu-document.pdf",
+      "mimeType": "application/pdf",
+      "targetLanguage": "en",
+      "sha256": "409fabbbb1e88d0dad023bbd3898cbd0134fc1af9ea424f747a084e14110c03a"
+    }
+  ]
+}

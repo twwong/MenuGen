@@ -102,6 +102,8 @@ Before finishing:
 - Run one unit test: `pnpm test -- path/to/file.test.ts`
 - Run browser tests: `pnpm test:e2e`
 - Run the deterministic pipeline benchmark: `pnpm benchmark`
+- Regenerate live benchmark fixtures: `pnpm fixtures:live`
+- Run the opt-in live benchmark: `pnpm benchmark:live -- --confirm-spend --max-usd 2`
 - Run the local quality gate: `pnpm check`
 - Build: `pnpm build`
 

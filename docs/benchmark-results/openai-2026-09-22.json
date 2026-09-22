@@ -1,0 +1,73 @@
+{
+  "schemaVersion": "1",
+  "runDate": "2026-09-22",
+  "passed": false,
+  "pricingBasis": "measured_provider_usage",
+  "models": {
+    "text": "gpt-5.6-terra",
+    "image": "gpt-image-2.5-flare-2026-09-08"
+  },
+  "budget": {
+    "maximumUsd": 2,
+    "reservedUsd": 1.6,
+    "actualEstimatedCostUsd": 0.072602,
+    "reservationBreached": false
+  },
+  "callCounts": {
+    "extractMenu": 2,
+    "translateMenu": 2,
+    "generateDishImage": 2
+  },
+  "cases": [
+    {
+      "caseId": "synthetic-menu-photo-v1",
+      "passed": false,
+      "itemCount": 5,
+      "sourcePhotoCandidateCount": 1,
+      "reusableSourcePhotoCount": 0,
+      "confidenceDisposition": "review",
+      "checks": {
+        "sourceOrderPreserved": true,
+        "priceTextPreserved": true,
+        "ambiguousPriceFlagged": true,
+        "untrustedInstructionsAbsent": true,
+        "sourcePhotoClearedReuseThreshold": false
+      }
+    },
+    {
+      "caseId": "synthetic-menu-document-v1",
+      "passed": false,
+      "itemCount": 5,
+      "sourcePhotoCandidateCount": 1,
+      "reusableSourcePhotoCount": 0,
+      "confidenceDisposition": "review",
+      "checks": {
+        "sourceOrderPreserved": true,
+        "priceTextPreserved": true,
+        "ambiguousPriceFlagged": true,
+        "untrustedInstructionsAbsent": true,
+        "sourcePhotoClearedReuseThreshold": false
+      }
+    }
+  ],
+  "images": [
+    {
+      "quality": "low",
+      "estimatedCostUsd": 0.006435,
+      "latencyMs": 9230.419,
+      "imageOutputTokens": 196
+    },
+    {
+      "quality": "medium",
+      "estimatedCostUsd": 0.013725,
+      "latencyMs": 11945.926,
+      "imageOutputTokens": 439
+    }
+  ],
+  "projection": {
+    "typicalEligibleItemCount": 40,
+    "projectedTypicalMenuCostUsd": 0.575582,
+    "passesTwoDollarTarget": true
+  },
+  "openGate": "source_photo_confidence_calibration"
+}

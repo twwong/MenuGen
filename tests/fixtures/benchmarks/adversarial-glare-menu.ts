@@ -18,7 +18,7 @@ export const adversarialGlareBenchmark: MenuBenchmarkCase = {
   providerFixture: {
     inputId: "synthetic-adversarial-glare-v1",
     extraction: {
-      schemaVersion: "1",
+      schemaVersion: "2",
       sourceLanguage: "mixed",
       sections: [
         {
@@ -43,7 +43,11 @@ export const adversarialGlareBenchmark: MenuBenchmarkCase = {
                 confidence: 0.45,
                 needsReview: true,
               },
-              priceText: "$12?",
+              price: {
+                sourceText: "$12?",
+                confidence: 0.4,
+                needsReview: true,
+              },
               explicitSourceClaims: [],
               imageEligibility: "needs_review",
             },
@@ -55,18 +59,47 @@ export const adversarialGlareBenchmark: MenuBenchmarkCase = {
                 confidence: 0.92,
                 needsReview: false,
               },
-              priceText: "$4",
+              price: {
+                sourceText: "$4",
+                confidence: 0.94,
+                needsReview: false,
+              },
               explicitSourceClaims: ["leche"],
               imageEligibility: "prepared_drink",
             },
           ],
         },
       ],
+      sourcePhotoCandidates: [
+        {
+          id: "photo-glare",
+          region: {
+            sourceFileOrder: 0,
+            pageIndex: 0,
+            x: 0.52,
+            y: 0.15,
+            width: 0.42,
+            height: 0.36,
+            confidence: 0.62,
+            needsReview: true,
+          },
+          association: {
+            itemId: null,
+            confidence: 0.35,
+            needsReview: true,
+          },
+          usability: {
+            status: "uncertain",
+            confidence: 0.45,
+            needsReview: true,
+          },
+        },
+      ],
     },
     translations: {
       en: {
-        schemaVersion: "1",
-        sourceSchemaVersion: "1",
+        schemaVersion: "2",
+        sourceSchemaVersion: "2",
         targetLanguage: "en",
         sections: [
           {

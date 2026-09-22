@@ -19,7 +19,7 @@ describe("runBenchmarkCase", () => {
     expect(report.passed).toBe(true);
     expect(report.checks.every((check) => check.passed)).toBe(true);
     expect(report.metrics.itemCount).toBe(3);
-    expect(report.metrics.eligibleImageCount).toBe(1);
+    expect(report.metrics.eligibleImageCount).toBe(0);
     expect(report.metrics.projectedTypicalMenuCostUsd).toBeLessThan(2);
     expect(report.pricingBasis).toBe("fixture_assumption");
     expect(report.confidence.disposition).toBe("review");
@@ -41,7 +41,7 @@ describe("runBenchmarkCase", () => {
       passedCaseCount: 2,
       failedCaseCount: 0,
       itemCount: 5,
-      eligibleImageCount: 1,
+      eligibleImageCount: 0,
     });
     expect(adversarial).toMatchObject({
       passed: true,
@@ -94,12 +94,30 @@ describe("runBenchmarkCase", () => {
 
     expect(mackerel.name.confidence).toBe(0.95);
     expect(dailySpecial.name.needsReview).toBe(true);
+    expect(result.imageContexts).toEqual([]);
+    expect(result.menu.sourcePhotoCandidates[0].association.itemId).toBe(
+      "mackerel",
+    );
+  });
+
+  it("does not reuse or guess an uncertain source-photo association", async () => {
+    const fixture = structuredClone(japaneseDinnerBenchmark.providerFixture);
+    const candidate = fixture.extraction.sourcePhotoCandidates[0];
+    candidate.association.confidence = 0.3;
+    candidate.association.needsReview = true;
+    candidate.usability.status = "uncertain";
+    candidate.usability.confidence = 0.4;
+    candidate.usability.needsReview = true;
+
+    const result = await runMenuPipeline({
+      provider: new FixtureAiProvider(fixture),
+      input: japaneseDinnerBenchmark.input,
+      targetLanguage: "en",
+    });
+
+    expect(result.confidenceAssessment.disposition).toBe("review");
     expect(result.imageContexts.map((context) => context.itemId)).toEqual([
       "mackerel",
-    ]);
-    expect(result.imageContexts[0].explicitSourceClaims).toEqual([
-      "味噌",
-      "生姜",
     ]);
   });
 

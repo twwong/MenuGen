@@ -5,13 +5,14 @@ import type { ResponseInputContent } from "openai/resources/responses/responses"
 import { z } from "zod";
 import {
   imageEligibilitySchema,
-  menuSourceExtractionV1Schema,
-  menuTranslationV1Schema,
+  menuSourceExtractionV2Schema,
+  menuTranslationV2Schema,
+  sourcePhotoCandidateSchema,
   sourceFieldSchema,
   targetLanguageSchema,
   translationFieldSchema,
-  type MenuSourceExtractionV1,
-  type MenuTranslationV1,
+  type MenuSourceExtractionV2,
+  type MenuTranslationV2,
   type TargetLanguage,
 } from "@/domain/menu/menu-extraction";
 import type {
@@ -30,7 +31,7 @@ const openAiSourceItemSchema = z
     order: z.number().int().nonnegative(),
     name: sourceFieldSchema,
     description: sourceFieldSchema.nullable(),
-    priceText: z.string().min(1).nullable(),
+    price: sourceFieldSchema.nullable(),
     explicitSourceClaims: z.array(z.string().min(1)),
     imageEligibility: imageEligibilitySchema,
   })
@@ -38,7 +39,7 @@ const openAiSourceItemSchema = z
 
 const openAiSourceExtractionSchema = z
   .object({
-    schemaVersion: z.literal("1"),
+    schemaVersion: z.literal("2"),
     sourceLanguage: z.string().min(2),
     title: sourceFieldSchema.nullable(),
     sections: z.array(
@@ -51,13 +52,14 @@ const openAiSourceExtractionSchema = z
         })
         .strict(),
     ),
+    sourcePhotoCandidates: z.array(sourcePhotoCandidateSchema),
   })
   .strict();
 
 const openAiTranslationSchema = z
   .object({
-    schemaVersion: z.literal("1"),
-    sourceSchemaVersion: z.literal("1"),
+    schemaVersion: z.literal("2"),
+    sourceSchemaVersion: z.literal("2"),
     targetLanguage: targetLanguageSchema,
     title: translationFieldSchema.nullable(),
     sections: z.array(
@@ -84,7 +86,10 @@ const pricingSchema = z
   .object({
     textInputUsdPerMillionTokens: z.number().nonnegative(),
     textOutputUsdPerMillionTokens: z.number().nonnegative(),
-    imageGenerationUsd: z.number().nonnegative(),
+    imageTextInputUsdPerMillionTokens: z.number().nonnegative(),
+    imageInputUsdPerMillionTokens: z.number().nonnegative(),
+    imageOutputUsdPerMillionTokens: z.number().nonnegative(),
+    imageGenerationFallbackUsd: z.number().nonnegative(),
     moderationRequestUsd: z.number().nonnegative(),
   })
   .strict();
@@ -105,6 +110,7 @@ const configSchema = z
     pricing: pricingSchema,
     image: imageSettingsSchema,
     inputDetail: z.enum(["low", "high"]),
+    maxOutputTokens: z.number().int().positive(),
   })
   .strict();
 
@@ -119,6 +125,7 @@ export interface OpenAiProviderOptions {
   pricing: OpenAiProviderPricing;
   image: OpenAiImageSettings;
   inputDetail?: "low" | "high";
+  maxOutputTokens?: number;
   now?: () => number;
 }
 
@@ -134,6 +141,9 @@ const extractionInstructions = [
   "Record only explicitly stated ingredients, allergens, and dietary labels in explicitSourceClaims.",
   "Never infer allergens, ingredients, nutrition, dietary suitability, food safety, or cross-contamination.",
   "Mark uncertain fields needsReview=true and lower their confidence instead of guessing.",
+  "Extract source-photo candidates with zero-based page indexes and normalized 0-to-1 bounding boxes.",
+  "Associate a source photo only when one item is clearly supported; otherwise use itemId=null and needsReview=true.",
+  "Use positional stable photo IDs such as photo-000.",
   "Classify imagery only as prepared_food, prepared_drink, not_eligible, or needs_review.",
 ].join("\n");
 
@@ -159,6 +169,7 @@ export class OpenAiProvider implements AiProviderSuite {
       pricing: options.pricing,
       image: options.image,
       inputDetail: options.inputDetail ?? "high",
+      maxOutputTokens: options.maxOutputTokens ?? 12_000,
     });
     this.now = options.now ?? (() => performance.now());
   }
@@ -241,7 +252,7 @@ export class OpenAiProvider implements AiProviderSuite {
 
   async extractMenu(
     input: MenuSourceInput,
-  ): Promise<ProviderResult<MenuSourceExtractionV1>> {
+  ): Promise<ProviderResult<MenuSourceExtractionV2>> {
     const startedAt = this.now();
     const content: ResponseInputContent[] = [
       {
@@ -258,10 +269,11 @@ export class OpenAiProvider implements AiProviderSuite {
       store: false,
       instructions: extractionInstructions,
       input: [{ role: "user", content }],
+      max_output_tokens: this.config.maxOutputTokens,
       text: {
         format: zodTextFormat(
           openAiSourceExtractionSchema,
-          "menu_source_extraction_v1",
+          "menu_source_extraction_v2",
         ),
       },
     });
@@ -273,6 +285,7 @@ export class OpenAiProvider implements AiProviderSuite {
     }
 
     const data = normalizeSourceExtraction(response.output_parsed);
+    validateCandidateSources(data, input);
     return {
       data,
       metadata: this.textMetadata(
@@ -285,11 +298,11 @@ export class OpenAiProvider implements AiProviderSuite {
   }
 
   async translateMenu(
-    menu: MenuSourceExtractionV1,
+    menu: MenuSourceExtractionV2,
     targetLanguage: TargetLanguage,
-  ): Promise<ProviderResult<MenuTranslationV1>> {
+  ): Promise<ProviderResult<MenuTranslationV2>> {
     const startedAt = this.now();
-    const source = menuSourceExtractionV1Schema.parse(menu);
+    const source = menuSourceExtractionV2Schema.parse(menu);
     const response = await this.client.responses.parse({
       model: this.config.textModel,
       store: false,
@@ -305,8 +318,9 @@ export class OpenAiProvider implements AiProviderSuite {
           ],
         },
       ],
+      max_output_tokens: this.config.maxOutputTokens,
       text: {
-        format: zodTextFormat(openAiTranslationSchema, "menu_translation_v1"),
+        format: zodTextFormat(openAiTranslationSchema, "menu_translation_v2"),
       },
     });
     if (!response.output_parsed) {
@@ -358,6 +372,21 @@ export class OpenAiProvider implements AiProviderSuite {
     );
     const format = response.output_format ?? this.config.image.outputFormat;
     const usage = response.usage;
+    const usageDetails = usage
+      ? {
+          inputTokens: usage.input_tokens,
+          outputTokens: usage.output_tokens,
+          textInputTokens:
+            usage.input_tokens_details?.text_tokens ?? usage.input_tokens,
+          imageInputTokens: usage.input_tokens_details?.image_tokens ?? 0,
+          imageOutputTokens:
+            usage.output_tokens_details?.image_tokens ?? usage.output_tokens,
+          images: 1,
+        }
+      : { images: 1 };
+    const estimatedCostUsd = usage
+      ? this.imageCost(usageDetails)
+      : this.config.pricing.imageGenerationFallbackUsd;
 
     return {
       data: {
@@ -371,12 +400,8 @@ export class OpenAiProvider implements AiProviderSuite {
         "generate_dish_image",
         this.config.imageModel,
         startedAt,
-        this.config.pricing.imageGenerationUsd,
-        {
-          inputTokens: usage?.input_tokens ?? 0,
-          outputTokens: usage?.output_tokens ?? 0,
-          images: 1,
-        },
+        estimatedCostUsd,
+        usageDetails,
       ),
     };
   }
@@ -467,6 +492,21 @@ export class OpenAiProvider implements AiProviderSuite {
     });
   }
 
+  private imageCost(usage: {
+    textInputTokens?: number;
+    imageInputTokens?: number;
+    imageOutputTokens?: number;
+  }) {
+    return (
+      ((usage.textInputTokens ?? 0) / 1_000_000) *
+        this.config.pricing.imageTextInputUsdPerMillionTokens +
+      ((usage.imageInputTokens ?? 0) / 1_000_000) *
+        this.config.pricing.imageInputUsdPerMillionTokens +
+      ((usage.imageOutputTokens ?? 0) / 1_000_000) *
+        this.config.pricing.imageOutputUsdPerMillionTokens
+    );
+  }
+
   private metadata(
     operation: ProviderOperation,
     model: string,
@@ -484,6 +524,15 @@ export class OpenAiProvider implements AiProviderSuite {
         inputTokens: usage.inputTokens ?? 0,
         outputTokens: usage.outputTokens ?? 0,
         images: usage.images ?? 0,
+        ...(usage.textInputTokens === undefined
+          ? {}
+          : { textInputTokens: usage.textInputTokens }),
+        ...(usage.imageInputTokens === undefined
+          ? {}
+          : { imageInputTokens: usage.imageInputTokens }),
+        ...(usage.imageOutputTokens === undefined
+          ? {}
+          : { imageOutputTokens: usage.imageOutputTokens }),
       },
     };
   }
@@ -491,8 +540,8 @@ export class OpenAiProvider implements AiProviderSuite {
 
 function normalizeSourceExtraction(
   value: OpenAiSourceExtraction,
-): MenuSourceExtractionV1 {
-  return menuSourceExtractionV1Schema.parse({
+): MenuSourceExtractionV2 {
+  return menuSourceExtractionV2Schema.parse({
     schemaVersion: value.schemaVersion,
     sourceLanguage: value.sourceLanguage,
     ...(value.title ? { title: value.title } : {}),
@@ -505,16 +554,17 @@ function normalizeSourceExtraction(
         order: item.order,
         name: item.name,
         ...(item.description ? { description: item.description } : {}),
-        ...(item.priceText ? { priceText: item.priceText } : {}),
+        ...(item.price ? { price: item.price } : {}),
         explicitSourceClaims: item.explicitSourceClaims,
         imageEligibility: item.imageEligibility,
       })),
     })),
+    sourcePhotoCandidates: value.sourcePhotoCandidates,
   });
 }
 
-function normalizeTranslation(value: OpenAiTranslation): MenuTranslationV1 {
-  return menuTranslationV1Schema.parse({
+function normalizeTranslation(value: OpenAiTranslation): MenuTranslationV2 {
+  return menuTranslationV2Schema.parse({
     schemaVersion: value.schemaVersion,
     sourceSchemaVersion: value.sourceSchemaVersion,
     targetLanguage: value.targetLanguage,
@@ -529,6 +579,29 @@ function normalizeTranslation(value: OpenAiTranslation): MenuTranslationV1 {
       })),
     })),
   });
+}
+
+function validateCandidateSources(
+  extraction: MenuSourceExtractionV2,
+  input: MenuSourceInput,
+) {
+  const filesByOrder = new Map(
+    input.files.map((file) => [file.pageOrder, file]),
+  );
+  for (const candidate of extraction.sourcePhotoCandidates) {
+    const file = filesByOrder.get(candidate.region.sourceFileOrder);
+    if (!file) {
+      throw new Error(
+        `Source-photo candidate references unknown file order ${candidate.region.sourceFileOrder}`,
+      );
+    }
+    if (
+      file.mimeType !== "application/pdf" &&
+      candidate.region.pageIndex !== 0
+    ) {
+      throw new Error("Image source-photo candidates must use pageIndex 0");
+    }
+  }
 }
 
 function validateProviderRef(ref: string, mimeType: string) {

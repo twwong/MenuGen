@@ -2,7 +2,7 @@
 
 MenuGen turns menu photos or PDFs into translated, mobile-friendly visual menus while preserving source text, prices, uncertainty, and image provenance.
 
-The pipeline benchmark milestone is in progress. The versioned deterministic fixture manifest passes locally, and an OpenAI adapter is available for the later live benchmark without coupling provider types to the domain model. See `prd.md` for the product requirements and `docs/implementation-plan.md` for delivery order.
+The pipeline benchmark milestone is in progress. The deterministic schema-v2 manifest passes locally, and the OpenAI adapter has been measured against synthetic PNG and PDF sources. Cost and core extraction checks passed; source-photo auto-reuse still needs calibration. See `prd.md` for the product requirements and `docs/implementation-plan.md` for delivery order.
 
 ## Local development
 
@@ -26,7 +26,21 @@ pnpm benchmark
 pnpm build
 ```
 
-`pnpm benchmark` runs the deterministic synthetic manifest and prints a content-free quality and cost report. Its pricing numbers are fixture assumptions until the OpenAI adapter is measured.
+`pnpm benchmark` runs the deterministic synthetic manifest and prints a content-free quality and cost report. Its pricing numbers remain fixture assumptions; the measured provider result is documented separately in `docs/benchmark.md`.
+
+Regenerate the committed synthetic PNG/PDF sources with:
+
+```bash
+pnpm fixtures:live
+```
+
+The live benchmark is developer-only, never runs in CI, and requires `OPENAI_API_KEY`, explicit spend confirmation, intact fixture hashes, and a cap no greater than $2:
+
+```bash
+pnpm benchmark:live -- --confirm-spend --max-usd 2
+```
+
+It makes at most two extraction, two translation, and two image-generation calls without retries. Reports and generated images are written under ignored `artifacts/benchmark-live/` directories. The application guard refuses calls outside its reservations; an OpenAI project spend limit is still the absolute billing backstop.
 
 Run the browser baseline after installing Playwright browsers:
 

@@ -18,7 +18,7 @@ export const japaneseDinnerBenchmark: MenuBenchmarkCase = {
   providerFixture: {
     inputId: "synthetic-ja-dinner-v1",
     extraction: {
-      schemaVersion: "1",
+      schemaVersion: "2",
       sourceLanguage: "ja",
       title: {
         sourceText: "晩ごはん",
@@ -48,7 +48,11 @@ export const japaneseDinnerBenchmark: MenuBenchmarkCase = {
                 confidence: 0.93,
                 needsReview: false,
               },
-              priceText: "¥1,280",
+              price: {
+                sourceText: "¥1,280",
+                confidence: 0.99,
+                needsReview: false,
+              },
               explicitSourceClaims: ["味噌", "生姜"],
               imageEligibility: "prepared_food",
             },
@@ -65,7 +69,11 @@ export const japaneseDinnerBenchmark: MenuBenchmarkCase = {
                 confidence: 0.91,
                 needsReview: false,
               },
-              priceText: "時価",
+              price: {
+                sourceText: "時価",
+                confidence: 0.96,
+                needsReview: false,
+              },
               explicitSourceClaims: [],
               imageEligibility: "needs_review",
             },
@@ -77,18 +85,47 @@ export const japaneseDinnerBenchmark: MenuBenchmarkCase = {
                 confidence: 0.98,
                 needsReview: false,
               },
-              priceText: "¥680",
+              price: {
+                sourceText: "¥680",
+                confidence: 0.99,
+                needsReview: false,
+              },
               explicitSourceClaims: [],
               imageEligibility: "not_eligible",
             },
           ],
         },
       ],
+      sourcePhotoCandidates: [
+        {
+          id: "photo-mackerel",
+          region: {
+            sourceFileOrder: 0,
+            pageIndex: 0,
+            x: 0.55,
+            y: 0.1,
+            width: 0.4,
+            height: 0.32,
+            confidence: 0.97,
+            needsReview: false,
+          },
+          association: {
+            itemId: "mackerel",
+            confidence: 0.96,
+            needsReview: false,
+          },
+          usability: {
+            status: "usable",
+            confidence: 0.95,
+            needsReview: false,
+          },
+        },
+      ],
     },
     translations: {
       en: {
-        schemaVersion: "1",
-        sourceSchemaVersion: "1",
+        schemaVersion: "2",
+        sourceSchemaVersion: "2",
         targetLanguage: "en",
         title: {
           translatedText: "Dinner",
@@ -170,7 +207,7 @@ export const japaneseDinnerBenchmark: MenuBenchmarkCase = {
       "bottled-beer": [],
     },
     needsReviewItemIds: ["daily-special"],
-    generatedImageItemIds: ["mackerel"],
+    generatedImageItemIds: [],
     confidenceDisposition: "review",
     untrustedInputFragments: [],
     forbiddenOutputFragments: ["peanut-free"],

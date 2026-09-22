@@ -1,7 +1,7 @@
-import type { MenuExtractionV1 } from "@/domain/menu/menu-extraction";
+import type { MenuExtractionV2 } from "@/domain/menu/menu-extraction";
 import type { DishImageContext } from "@/providers/contracts";
 
-type MenuItem = MenuExtractionV1["sections"][number]["items"][number];
+type MenuItem = MenuExtractionV2["sections"][number]["items"][number];
 
 export function buildDishImageContext(item: MenuItem): DishImageContext {
   const statedFacts = item.explicitSourceClaims.length

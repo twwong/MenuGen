@@ -1,6 +1,6 @@
 import type {
-  MenuSourceExtractionV1,
-  MenuTranslationV1,
+  MenuSourceExtractionV2,
+  MenuTranslationV2,
   TargetLanguage,
 } from "@/domain/menu/menu-extraction";
 import type {
@@ -17,8 +17,8 @@ type FixtureOperation = ProviderMetadata["operation"];
 
 export interface FixtureProviderCase {
   inputId: string;
-  extraction: MenuSourceExtractionV1;
-  translations: Partial<Record<TargetLanguage, MenuTranslationV1>>;
+  extraction: MenuSourceExtractionV2;
+  translations: Partial<Record<TargetLanguage, MenuTranslationV2>>;
   costUsd: Record<FixtureOperation, number>;
 }
 
@@ -37,7 +37,7 @@ export class FixtureAiProvider implements AiProviderSuite {
 
   async extractMenu(
     input: MenuSourceInput,
-  ): Promise<ProviderResult<MenuSourceExtractionV1>> {
+  ): Promise<ProviderResult<MenuSourceExtractionV2>> {
     this.assertInput(input.inputId);
     return this.result(this.fixture.extraction, "extract_menu", {
       inputTokens: 1_200,
@@ -46,9 +46,9 @@ export class FixtureAiProvider implements AiProviderSuite {
   }
 
   async translateMenu(
-    _menu: MenuSourceExtractionV1,
+    _menu: MenuSourceExtractionV2,
     targetLanguage: TargetLanguage,
-  ): Promise<ProviderResult<MenuTranslationV1>> {
+  ): Promise<ProviderResult<MenuTranslationV2>> {
     const translation = this.fixture.translations[targetLanguage];
     if (!translation) {
       throw new Error(`Fixture has no ${targetLanguage} translation`);
@@ -105,7 +105,7 @@ export class FixtureAiProvider implements AiProviderSuite {
       data: structuredClone(data),
       metadata: {
         provider: "fixture",
-        model: "fixture-v1",
+        model: "fixture-v2",
         operation,
         latencyMs: 0,
         estimatedCostUsd: this.fixture.costUsd[operation],

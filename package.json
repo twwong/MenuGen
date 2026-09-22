@@ -21,6 +21,8 @@
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
     "benchmark": "node --import tsx scripts/run-benchmark.ts",
+    "benchmark:live": "node --import tsx scripts/run-live-benchmark.ts",
+    "fixtures:live": "node --import tsx scripts/generate-live-fixtures.ts",
     "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test"
   },
   "dependencies": {

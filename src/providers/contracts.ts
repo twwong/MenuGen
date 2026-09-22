@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type {
-  MenuSourceExtractionV1,
-  MenuTranslationV1,
+  MenuSourceExtractionV2,
+  MenuTranslationV2,
   TargetLanguage,
 } from "@/domain/menu/menu-extraction";
 
@@ -25,6 +25,9 @@ export const providerMetadataSchema = z
         inputTokens: z.number().int().nonnegative(),
         outputTokens: z.number().int().nonnegative(),
         images: z.number().int().nonnegative(),
+        textInputTokens: z.number().int().nonnegative().optional(),
+        imageInputTokens: z.number().int().nonnegative().optional(),
+        imageOutputTokens: z.number().int().nonnegative().optional(),
       })
       .strict(),
   })
@@ -72,14 +75,14 @@ export interface DishImageContext {
 export interface MenuExtractionProvider {
   extractMenu(
     input: MenuSourceInput,
-  ): Promise<ProviderResult<MenuSourceExtractionV1>>;
+  ): Promise<ProviderResult<MenuSourceExtractionV2>>;
 }
 
 export interface MenuTranslationProvider {
   translateMenu(
-    menu: MenuSourceExtractionV1,
+    menu: MenuSourceExtractionV2,
     targetLanguage: TargetLanguage,
-  ): Promise<ProviderResult<MenuTranslationV1>>;
+  ): Promise<ProviderResult<MenuTranslationV2>>;
 }
 
 export interface DishImageProvider {
