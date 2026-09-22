@@ -1,22 +1,20 @@
-import { cookies } from "next/headers";
-
-import { ANONYMOUS_DRAFT_COOKIE } from "@/application/ownership";
-import { getOwnedFixtureMenu } from "@/providers/fixture/fixture-creator-store";
+import { getFixtureCreatorActor } from "@/app/create/session";
+import { getFixtureGenerationView } from "@/providers/fixture/fixture-creator-store";
 
 export async function GET(
   _request: Request,
   context: RouteContext<"/api/creator/menus/[menuId]/status">,
 ) {
   const { menuId } = await context.params;
-  const cookieStore = await cookies();
-  const menu = getOwnedFixtureMenu({
+  const actor = await getFixtureCreatorActor();
+  const view = getFixtureGenerationView({
     menuId,
-    anonymousToken: cookieStore.get(ANONYMOUS_DRAFT_COOKIE)?.value ?? null,
-    userId: null,
+    ...actor,
   });
-  if (!menu) {
+  if (!view) {
     return Response.json({ code: "not_found" }, { status: 404 });
   }
+  const { menu } = view;
   return Response.json(
     {
       id: menu.id,
@@ -25,6 +23,10 @@ export async function GET(
       completedItemCount: menu.completedItemCount,
       totalItemCount: menu.totalItemCount,
       updatedAt: menu.updatedAt,
+      expiresAt: menu.expiresAt,
+      items: view.items,
+      quota: view.quota,
+      estimatedCostUsd: view.estimatedCostUsd,
     },
     { headers: { "Cache-Control": "private, no-store" } },
   );

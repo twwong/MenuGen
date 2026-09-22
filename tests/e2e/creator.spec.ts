@@ -44,9 +44,32 @@ test("creates and corrects an anonymous menu draft", async ({ page }) => {
 
   await expect(page).toHaveURL(/\/create\/[a-f0-9-]+\/generate$/);
   await expect(
-    page.getByRole("heading", { name: "Your menu record is ready." }),
+    page.getByRole("heading", {
+      name: "Keep this menu and make its images.",
+    }),
   ).toBeVisible();
-  await expect(page.getByText("None", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Continue as preview diner" }).click();
+
+  await expect(
+    page.getByRole("heading", { name: "Ready when you are." }),
+  ).toBeVisible();
+  await expect(page.getByText("3 of 3")).toBeVisible();
+  await page.getByRole("button", { name: "Use 1 credit and generate" }).click();
+
+  await expect(
+    page.getByRole("heading", { name: "Your visual menu is ready." }),
+  ).toBeVisible({ timeout: 10_000 });
+  await expect(page.getByText("2 of 3")).toBeVisible();
+  await expect(page.getByText("Source menu image")).toBeVisible();
+  await expect(page.getByText("AI visual estimate")).toBeVisible();
+  await expect(page.getByText("Image unavailable")).toBeVisible();
+  await expect(
+    page.getByText("This item failed without stopping the rest of the menu."),
+  ).toBeVisible();
+
+  await page.getByRole("button", { name: "Try again · 2 left" }).click();
+  await expect(page.getByText("Image unavailable")).not.toBeVisible();
+  await expect(page.getByText("2 of 3")).toBeVisible();
 });
 
 test("creator upload page has no automatically detectable accessibility violations", async ({

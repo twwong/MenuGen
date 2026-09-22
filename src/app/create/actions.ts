@@ -7,6 +7,11 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import {
+  FIXTURE_USER_COOKIE,
+  fixtureUserCookieOptions,
+  getFixtureCreatorActor,
+} from "@/app/create/session";
+import {
   ANONYMOUS_DRAFT_COOKIE,
   anonymousOwnershipCookieOptions,
   createAnonymousOwnershipToken,
@@ -17,9 +22,13 @@ import { readCreatorEnvironment } from "@/config/env";
 import { reviewPatchSchema } from "@/domain/creator/revisions";
 import { targetLanguageSchema } from "@/domain/menu/menu-extraction";
 import {
+  claimFixtureMenu,
   createFixtureDraft,
   getOwnedFixtureMenu,
+  regenerateFixtureItem,
+  reserveAndStartFixtureGeneration,
   reviseFixtureMenu,
+  runFixtureGeneration,
   transitionFixtureMenu,
 } from "@/providers/fixture/fixture-creator-store";
 
@@ -185,16 +194,68 @@ export async function completeReviewAction(menuId: string) {
   return { menuId };
 }
 
+export async function claimFixtureDraftAction(menuId: string) {
+  z.string().uuid().parse(menuId);
+  await assertSameOrigin();
+  const environment = readCreatorEnvironment();
+  if (environment.CREATOR_BACKEND !== "fixture") {
+    throw new Error("fixture_claim_unavailable");
+  }
+  const cookieStore = await cookies();
+  const anonymousToken = cookieStore.get(ANONYMOUS_DRAFT_COOKIE)?.value;
+  if (!anonymousToken) throw new Error("anonymous_ownership_missing");
+  const existingUserId = cookieStore.get(FIXTURE_USER_COOKIE)?.value;
+  const userId = existingUserId ?? randomUUID();
+  const claimed = claimFixtureMenu({
+    menuId,
+    anonymousToken,
+    userId,
+    now: new Date().toISOString(),
+  });
+  if (!claimed) throw new Error("draft_claim_conflict");
+  cookieStore.set(FIXTURE_USER_COOKIE, userId, fixtureUserCookieOptions());
+  cookieStore.delete(ANONYMOUS_DRAFT_COOKIE);
+  revalidatePath(`/create/${menuId}/generate`);
+  return { menuId };
+}
+
+export async function confirmFixtureGenerationAction(menuId: string) {
+  z.string().uuid().parse(menuId);
+  await assertSameOrigin();
+  const actor = await fixtureActor();
+  if (!actor.userId) throw new Error("authentication_required");
+  const generation = reserveAndStartFixtureGeneration({
+    menuId,
+    userId: actor.userId,
+    now: new Date().toISOString(),
+  });
+  void runFixtureGeneration(menuId);
+  revalidatePath(`/create/${menuId}/generate`);
+  return generation;
+}
+
+export async function regenerateFixtureItemAction(input: unknown) {
+  const parsed = z
+    .object({ menuId: z.string().uuid(), itemId: z.string().min(1).max(100) })
+    .strict()
+    .parse(input);
+  await assertSameOrigin();
+  const actor = await fixtureActor();
+  if (!actor.userId) throw new Error("authentication_required");
+  regenerateFixtureItem({
+    ...parsed,
+    userId: actor.userId,
+    now: new Date().toISOString(),
+  });
+  revalidatePath(`/create/${parsed.menuId}/generate`);
+}
+
 export async function getFixtureActor() {
   return fixtureActor();
 }
 
 async function fixtureActor() {
-  const cookieStore = await cookies();
-  return {
-    anonymousToken: cookieStore.get(ANONYMOUS_DRAFT_COOKIE)?.value ?? null,
-    userId: null,
-  };
+  return getFixtureCreatorActor();
 }
 
 async function assertSameOrigin() {

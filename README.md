@@ -2,7 +2,7 @@
 
 MenuGen turns menu photos or PDFs into translated, mobile-friendly visual menus while preserving source text, prices, uncertainty, and image provenance.
 
-Milestone 1 is complete. Milestone 2 is in progress, starting with versioned creator-domain rules, Drizzle persistence, and provider interfaces. The creator workflow remains disabled in public production until the protected preview passes acceptance testing. See `prd.md` for the product requirements and `docs/implementation-plan.md` for delivery order.
+Milestone 1 is complete. Milestone 2 is in progress. The deterministic creator proof now covers upload, exception-only review, anonymous draft claiming, rolling credits, source-photo reuse, partial generation failure, and uploader regeneration. Managed ingestion, durable production workflows, and lifecycle operations still need provisioned development services. The creator workflow remains disabled in public production until the protected preview passes acceptance testing. See `prd.md` for the product requirements and `docs/implementation-plan.md` for delivery order.
 
 ## Local development
 
@@ -24,7 +24,9 @@ CREATOR_WORKFLOW_ENABLED=true CREATOR_BACKEND=fixture pnpm dev
 
 The fixture backend stores synthetic draft state in a private temporary
 directory so navigation and browser reloads work. It is never used when
-`CREATOR_BACKEND=managed`.
+`CREATOR_BACKEND=managed`. Its preview sign-in is deliberately local: it proves
+the claim and quota boundaries without contacting Clerk or a paid image
+provider.
 
 ## Checks
 

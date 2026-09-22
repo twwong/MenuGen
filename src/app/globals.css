@@ -957,6 +957,191 @@ label {
   text-underline-offset: 0.25rem;
 }
 
+.generation-layout {
+  display: grid;
+  width: min(100% - 2rem, 88rem);
+  margin-inline: auto;
+  padding-block: 2rem 4rem;
+  gap: 2rem;
+}
+
+.generation-summary {
+  align-self: start;
+  border-top: 4px solid var(--palette-shiso);
+  background: var(--palette-menu-paper);
+  padding: clamp(1.25rem, 4vw, 2.5rem);
+}
+
+.generation-summary h1 {
+  max-width: 10ch;
+  margin-top: 0.65rem;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(2.5rem, 8vw, 4.5rem);
+  font-weight: 500;
+  letter-spacing: -0.05em;
+  line-height: 0.95;
+}
+
+.generation-lede {
+  max-width: 34rem;
+  margin-top: 1.25rem;
+  color: var(--palette-ink-muted);
+  line-height: 1.65;
+}
+
+.generation-facts {
+  margin-top: 1.75rem;
+  border-top: 1px solid rgb(35 31 24 / 30%);
+}
+
+.generation-facts div {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  border-bottom: 1px solid rgb(35 31 24 / 20%);
+  padding-block: 0.75rem;
+}
+
+.generation-facts dt {
+  color: var(--palette-ink-muted);
+}
+
+.generation-facts dd {
+  font-weight: 700;
+  text-align: right;
+}
+
+.generation-confirmation {
+  margin-top: 1.5rem;
+  border-left: 3px solid var(--palette-persimmon);
+  background: rgb(216 92 53 / 8%);
+  padding: 1rem;
+}
+
+.generation-confirmation h2 {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.4rem;
+}
+
+.generation-confirmation > p:not(.form-error) {
+  margin-top: 0.4rem;
+  color: var(--palette-ink-muted);
+  font-size: 0.85rem;
+  line-height: 1.55;
+}
+
+.generation-items {
+  display: grid;
+  align-content: start;
+  gap: 1rem;
+}
+
+.generation-card {
+  display: grid;
+  gap: 1rem;
+  border: 1px solid rgb(35 31 24 / 18%);
+  background: var(--palette-menu-paper);
+  box-shadow: 0.45rem 0.45rem 0 var(--palette-broth);
+  padding: 1rem;
+}
+
+.generation-card__image {
+  position: relative;
+  display: grid;
+  aspect-ratio: 4 / 3;
+  place-items: center;
+  overflow: hidden;
+  background: var(--palette-broth);
+}
+
+.generation-card__image span {
+  width: 42%;
+  aspect-ratio: 1;
+  border: 0.7rem solid rgb(255 253 247 / 72%);
+  border-radius: 50%;
+  background: rgb(216 92 53 / 42%);
+  box-shadow: 0 0 0 1px rgb(35 31 24 / 20%);
+}
+
+.generation-card__image--source {
+  background:
+    radial-gradient(
+      ellipse at 50% 58%,
+      rgb(49 91 69 / 72%) 0 18%,
+      transparent 19%
+    ),
+    radial-gradient(
+      ellipse at 50% 50%,
+      rgb(216 92 53 / 62%) 0 35%,
+      transparent 36%
+    ),
+    var(--palette-broth);
+}
+
+.generation-card__image--unavailable {
+  filter: grayscale(1);
+  opacity: 0.72;
+}
+
+.generation-card__image small {
+  position: absolute;
+  right: 0.5rem;
+  bottom: 0.5rem;
+  background: var(--palette-menu-paper);
+  padding: 0.35rem 0.45rem;
+  color: var(--palette-shiso-dark);
+  font-size: 0.67rem;
+  font-weight: 700;
+}
+
+.generation-card h2 {
+  margin-top: 0.35rem;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.55rem;
+}
+
+.generation-card h2 + p {
+  margin-top: 0.2rem;
+  color: var(--palette-ink-muted);
+}
+
+.generation-card__error {
+  margin-top: 0.75rem;
+  color: #7e2b16;
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.generation-card .quiet-button {
+  min-height: 2.75rem;
+  margin-top: 0.75rem;
+  border: 1px solid var(--palette-shiso);
+  background: transparent;
+  color: var(--palette-shiso-dark);
+  padding: 0.6rem 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.generation-card .quiet-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.sanitized-code {
+  display: block;
+  margin-top: 0.55rem;
+  color: var(--palette-ink-muted);
+  font-size: 0.7rem;
+}
+
+.clerk-panel {
+  display: grid;
+  min-height: calc(100svh - 4.5rem);
+  place-items: center;
+  padding: 2rem 1rem 4rem;
+}
+
 @media (min-width: 40rem) {
   .page-order li {
     grid-template-columns: 2rem minmax(0, 1fr) auto auto;
@@ -989,6 +1174,11 @@ label {
   .review-footer .primary-button {
     margin-top: 0;
   }
+
+  .generation-card {
+    grid-template-columns: 10rem minmax(0, 1fr);
+    align-items: center;
+  }
 }
 
 @media (min-width: 56rem) {
@@ -1016,6 +1206,17 @@ label {
   }
 
   .issue-rail {
+    position: sticky;
+    top: 1rem;
+  }
+
+  .generation-layout {
+    grid-template-columns: minmax(20rem, 0.85fr) minmax(0, 1.15fr);
+    gap: 3rem;
+    padding-top: 4rem;
+  }
+
+  .generation-summary {
     position: sticky;
     top: 1rem;
   }

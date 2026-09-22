@@ -1,6 +1,6 @@
 # MenuGen Implementation Plan
 
-**Current status:** Milestone 1 is complete. Milestone 2 is in progress. The foundation and deterministic upload/review proof are implemented: a user can select and reorder pages, see byte progress, resume a private synthetic draft, correct uncertain prices, explicitly leave ambiguous photos unassociated, and advance an immutable revision. Mobile Chrome/Safari and automated WCAG checks pass. Managed ingestion, auth, generation, lifecycle work, and all external provisioning remain open.
+**Current status:** Milestone 1 is complete. Milestone 2 is in progress. The deterministic creator proof now runs from ordered upload through review, one-time anonymous claim, quota reservation/consumption, source-photo reuse, independent item generation, visible partial failure, and uploader regeneration. Duplicate fixture delivery does not double-consume a credit. Mobile Chrome/Safari and automated WCAG checks pass. Managed ingestion, Clerk claim persistence, Vercel Workflow execution, lifecycle work, and all external provisioning remain open.
 
 ## Goal
 
@@ -125,7 +125,7 @@ The first slice may use fixture files instead of uploads, authentication, persis
 
 - [x] Foundation: domain schemas, state rules, Drizzle schema/migrations, safe DAL contracts, provider interfaces, and managed-stack ADRs.
 - [ ] Upload and review: the fixture-backed UI, immutable corrections, strict local validation, crop-before-delete ordering, signed Transloadit adapter, and callback verification are complete. Managed callback persistence, preflight execution, and verified remote source deletion remain.
-- [ ] Authentication and generation: Clerk claim flow, atomic quota ledger, durable fan-out, retries, and regeneration.
+- [ ] Authentication and generation: the fixture proof covers one-time claim, rolling quota behavior, duplicate delivery, source-photo suppression, bounded retry policy, item isolation, cost ceilings, and two uploader regenerations. The Clerk-backed claim, transactional Neon ledger, and Vercel Workflow fan-out remain open.
 - [ ] Resume and lifecycle: dashboard, polling, email outbox, deletion, expiry, and content-free telemetry.
 - [ ] Closure: protected-preview acceptance, manual live smoke tests, final documentation, and milestone sign-off.
 

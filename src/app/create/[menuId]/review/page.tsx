@@ -1,9 +1,8 @@
 import Link from "next/link";
-import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 
 import { ReviewWorkspace } from "@/app/create/[menuId]/review/review-workspace";
-import { ANONYMOUS_DRAFT_COOKIE } from "@/application/ownership";
+import { getFixtureCreatorActor } from "@/app/create/session";
 import { collectReviewIssues } from "@/application/review-issues";
 import { getOwnedFixtureMenu } from "@/providers/fixture/fixture-creator-store";
 
@@ -11,11 +10,10 @@ export default async function ReviewPage(
   props: PageProps<"/create/[menuId]/review">,
 ) {
   const { menuId } = await props.params;
-  const cookieStore = await cookies();
+  const actor = await getFixtureCreatorActor();
   const menu = getOwnedFixtureMenu({
     menuId,
-    anonymousToken: cookieStore.get(ANONYMOUS_DRAFT_COOKIE)?.value ?? null,
-    userId: null,
+    ...actor,
   });
   if (!menu?.currentRevision) notFound();
   if (menu.state === "generation_ready") redirect(`/create/${menuId}/generate`);

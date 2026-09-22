@@ -15,6 +15,17 @@ import type { SafeMenuDetail, SafeMenuSummary } from "@/application/contracts";
 import { collectReviewIssues } from "@/application/review-issues";
 import { ownershipTokenMatches } from "@/application/ownership";
 import {
+  assertRegenerationAllowed,
+  buildGenerationPlan,
+  MenuCostGuard,
+} from "@/domain/creator/generation-policy";
+import {
+  quotaEntrySchema,
+  summarizeRollingQuota,
+  type QuotaEntry,
+  type QuotaSummary,
+} from "@/domain/creator/quota";
+import {
   createRevisedDraft,
   menuDraftV1Schema,
   type MenuDraftV1,
@@ -41,20 +52,50 @@ interface FixtureMenuRecord {
   updatedAt: string;
   expiresAt: string | null;
   itemStates: Map<string, ItemState>;
+  itemProvenance: Map<string, "source" | "generated" | "unavailable" | null>;
+  itemErrorCodes: Map<string, string | null>;
+  regenerationCounts: Map<string, number>;
+  quotaEntries: QuotaEntry[];
+  reservationId: string | null;
+  providerRequestStarted: boolean;
+  estimatedCostUsd: number;
 }
 
 interface StoredFixtureMenuRecord extends Omit<
   FixtureMenuRecord,
-  "itemStates"
+  "itemStates" | "itemProvenance" | "itemErrorCodes" | "regenerationCounts"
 > {
   itemStates: Array<[string, ItemState]>;
+  itemProvenance: Array<
+    [string, "source" | "generated" | "unavailable" | null]
+  >;
+  itemErrorCodes: Array<[string, string | null]>;
+  regenerationCounts: Array<[string, number]>;
+}
+
+export interface FixtureGenerationItem {
+  itemId: string;
+  state: ItemState;
+  provenance: "source" | "generated" | "unavailable" | null;
+  sanitizedErrorCode: string | null;
+  regenerationCount: number;
+}
+
+export interface FixtureGenerationView {
+  menu: SafeMenuDetail;
+  items: readonly FixtureGenerationItem[];
+  quota: QuotaSummary | null;
+  estimatedCostUsd: number;
 }
 
 declare global {
   var __menugenFixtureStore: Map<string, FixtureMenuRecord> | undefined;
+  var __menugenFixtureGenerationRuns: Set<string> | undefined;
 }
 
 const store = (globalThis.__menugenFixtureStore ??= new Map());
+const activeGenerationRuns = (globalThis.__menugenFixtureGenerationRuns ??=
+  new Set());
 const fixtureDirectory = join(
   tmpdir(),
   `menugen-fixture-creator-${process.env.PORT ?? "local"}`,
@@ -94,6 +135,25 @@ export function createFixtureDraft(input: {
         section.items.map((item) => [item.id, "pending" as const]),
       ),
     ),
+    itemProvenance: new Map(
+      menu.sections.flatMap((section) =>
+        section.items.map((item) => [item.id, null]),
+      ),
+    ),
+    itemErrorCodes: new Map(
+      menu.sections.flatMap((section) =>
+        section.items.map((item) => [item.id, null]),
+      ),
+    ),
+    regenerationCounts: new Map(
+      menu.sections.flatMap((section) =>
+        section.items.map((item) => [item.id, 0]),
+      ),
+    ),
+    quotaEntries: [],
+    reservationId: null,
+    providerRequestStarted: false,
+    estimatedCostUsd: 0,
   };
   store.set(record.id, record);
   persistRecord(record);
@@ -166,6 +226,242 @@ export function transitionFixtureMenu(input: {
   return true;
 }
 
+export function claimFixtureMenu(input: {
+  menuId: string;
+  anonymousToken: string;
+  userId: string;
+  now: string;
+}): boolean {
+  const record = getRecord(input.menuId);
+  if (
+    !record ||
+    record.userId !== null ||
+    !record.anonymousTokenHash ||
+    !ownershipTokenMatches(input.anonymousToken, record.anonymousTokenHash)
+  ) {
+    return false;
+  }
+  record.userId = input.userId;
+  record.anonymousTokenHash = null;
+  record.updatedAt = input.now;
+  persistRecord(record);
+  return true;
+}
+
+export function getFixtureGenerationView(input: {
+  menuId: string;
+  anonymousToken: string | null;
+  userId: string | null;
+  now?: Date;
+}): FixtureGenerationView | null {
+  const record = getRecord(input.menuId);
+  if (!record || !isOwner(record, input)) return null;
+  return {
+    menu: toDetail(record),
+    items: [...record.itemStates.entries()].map(([itemId, state]) => ({
+      itemId,
+      state,
+      provenance: record.itemProvenance.get(itemId) ?? null,
+      sanitizedErrorCode: record.itemErrorCodes.get(itemId) ?? null,
+      regenerationCount: record.regenerationCounts.get(itemId) ?? 0,
+    })),
+    quota: record.userId
+      ? fixtureQuotaSummary(record.userId, input.now ?? new Date())
+      : null,
+    estimatedCostUsd: record.estimatedCostUsd,
+  };
+}
+
+export function reserveAndStartFixtureGeneration(input: {
+  menuId: string;
+  userId: string;
+  now: string;
+}): { reservationId: string | null; generationItemCount: number } {
+  const record = getRecord(input.menuId);
+  if (!record || record.userId !== input.userId)
+    throw new Error("menu_not_found");
+  if (record.state !== "generation_ready") {
+    if (record.state === "generating" || record.state === "ready") {
+      return {
+        reservationId: record.reservationId,
+        generationItemCount: [...record.itemStates.values()].filter((state) =>
+          ["generation_eligible", "generating", "generated", "failed"].includes(
+            state,
+          ),
+        ).length,
+      };
+    }
+    throw new Error("menu_not_ready_for_generation");
+  }
+
+  const plan = buildGenerationPlan(record.currentRevision.menu);
+  for (const item of plan) {
+    if (item.disposition === "reuse_source_photo") {
+      record.itemStates.set(item.itemId, "source_photo_ready");
+      record.itemProvenance.set(item.itemId, "source");
+    } else if (item.disposition === "generate") {
+      record.itemStates.set(item.itemId, "generation_eligible");
+    } else {
+      record.itemStates.set(item.itemId, "not_eligible");
+    }
+  }
+  const generationItemCount = plan.filter(
+    (item) => item.disposition === "generate",
+  ).length;
+  record.generationRevisionId = record.currentRevision.revisionId;
+  assertMenuTransition("generation_ready", "generating");
+  record.state = "generating";
+
+  if (generationItemCount > 0) {
+    const quota = fixtureQuotaSummary(record.userId, new Date(input.now));
+    if (quota.remaining < 1) throw new Error("quota_exhausted");
+    const reservationId = randomUUID();
+    record.reservationId = reservationId;
+    record.quotaEntries.push(
+      quotaEntrySchema.parse({
+        id: randomUUID(),
+        userId: record.userId,
+        menuId: record.id,
+        reservationId,
+        kind: "reservation",
+        amount: 1,
+        businessKey: `menu:${record.id}:reservation`,
+        occurredAt: input.now,
+        reasonCode: "initial_generation",
+      }),
+    );
+  } else {
+    assertMenuTransition("generating", "ready");
+    record.state = "ready";
+    record.expiresAt = addDays(new Date(input.now), 30).toISOString();
+  }
+  record.updatedAt = input.now;
+  persistRecord(record);
+  return { reservationId: record.reservationId, generationItemCount };
+}
+
+export async function runFixtureGeneration(
+  menuId: string,
+  options: { delayMs?: number } = {},
+): Promise<void> {
+  if (activeGenerationRuns.has(menuId)) return;
+  const initial = getRecord(menuId);
+  if (!initial || initial.state !== "generating") return;
+  activeGenerationRuns.add(menuId);
+  try {
+    await runFixtureGenerationOnce(menuId, options.delayMs ?? 350);
+  } finally {
+    activeGenerationRuns.delete(menuId);
+  }
+}
+
+export function releaseFixtureGenerationReservation(input: {
+  menuId: string;
+  userId: string;
+  now: string;
+  reasonCode: string;
+}): boolean {
+  const record = getRecord(input.menuId);
+  if (!record || record.userId !== input.userId)
+    throw new Error("menu_not_found");
+  if (
+    record.state !== "generating" ||
+    record.providerRequestStarted ||
+    !record.reservationId
+  ) {
+    return false;
+  }
+  record.quotaEntries.push(
+    quotaEntrySchema.parse({
+      id: randomUUID(),
+      userId: record.userId,
+      menuId: record.id,
+      reservationId: record.reservationId,
+      kind: "release",
+      amount: -1,
+      businessKey: `menu:${record.id}:release`,
+      occurredAt: input.now,
+      reasonCode: input.reasonCode,
+    }),
+  );
+  assertMenuTransition("generating", "failed");
+  record.state = "failed";
+  record.updatedAt = input.now;
+  persistRecord(record);
+  return true;
+}
+
+async function runFixtureGenerationOnce(
+  menuId: string,
+  delayMs: number,
+): Promise<void> {
+  const initial = getRecord(menuId);
+  if (!initial || initial.state !== "generating") return;
+  const generatedIds = [...initial.itemStates.entries()]
+    .filter(([, state]) => state === "generation_eligible")
+    .map(([itemId]) => itemId);
+  const costGuard = new MenuCostGuard();
+
+  for (const itemId of generatedIds) {
+    await delay(delayMs);
+    const record = getRecord(menuId);
+    if (!record || record.state !== "generating") return;
+    costGuard.reserve(0.02);
+    if (!record.providerRequestStarted) {
+      consumeFixtureReservation(record, new Date().toISOString());
+    }
+    record.itemStates.set(itemId, "generating");
+    record.estimatedCostUsd += 0.02;
+    record.updatedAt = new Date().toISOString();
+    persistRecord(record);
+
+    await delay(delayMs);
+    const updated = getRecord(menuId);
+    if (!updated || updated.state !== "generating") return;
+    if (itemId === "tea") {
+      updated.itemStates.set(itemId, "failed");
+      updated.itemProvenance.set(itemId, "unavailable");
+      updated.itemErrorCodes.set(itemId, "provider_content_rejected");
+    } else {
+      updated.itemStates.set(itemId, "generated");
+      updated.itemProvenance.set(itemId, "generated");
+    }
+    updated.updatedAt = new Date().toISOString();
+    persistRecord(updated);
+  }
+
+  const completed = getRecord(menuId);
+  if (!completed || completed.state !== "generating") return;
+  assertMenuTransition("generating", "ready");
+  completed.state = "ready";
+  completed.expiresAt = addDays(new Date(), 30).toISOString();
+  completed.updatedAt = new Date().toISOString();
+  persistRecord(completed);
+}
+
+export function regenerateFixtureItem(input: {
+  menuId: string;
+  itemId: string;
+  userId: string;
+  now: string;
+}): void {
+  const record = getRecord(input.menuId);
+  if (!record || record.userId !== input.userId)
+    throw new Error("menu_not_found");
+  if (record.state !== "ready") throw new Error("menu_not_ready");
+  const current = record.regenerationCounts.get(input.itemId);
+  if (current === undefined) throw new Error("item_not_found");
+  assertRegenerationAllowed(current);
+  new MenuCostGuard().reserve(0.02);
+  record.regenerationCounts.set(input.itemId, current + 1);
+  record.itemStates.set(input.itemId, "generated");
+  record.itemProvenance.set(input.itemId, "generated");
+  record.itemErrorCodes.set(input.itemId, null);
+  record.estimatedCostUsd += 0.02;
+  record.updatedAt = input.now;
+  persistRecord(record);
+}
+
 function getRecord(menuId: string): FixtureMenuRecord | undefined {
   try {
     const stored = JSON.parse(
@@ -175,6 +471,15 @@ function getRecord(menuId: string): FixtureMenuRecord | undefined {
       ...stored,
       currentRevision: menuDraftV1Schema.parse(stored.currentRevision),
       itemStates: new Map(stored.itemStates),
+      itemProvenance: new Map(stored.itemProvenance ?? []),
+      itemErrorCodes: new Map(stored.itemErrorCodes ?? []),
+      regenerationCounts: new Map(stored.regenerationCounts ?? []),
+      quotaEntries: (stored.quotaEntries ?? []).map((entry) =>
+        quotaEntrySchema.parse(entry),
+      ),
+      reservationId: stored.reservationId ?? null,
+      providerRequestStarted: stored.providerRequestStarted ?? false,
+      estimatedCostUsd: stored.estimatedCostUsd ?? 0,
     };
     store.set(menuId, record);
     return record;
@@ -202,6 +507,9 @@ function persistRecord(record: FixtureMenuRecord): void {
   const stored: StoredFixtureMenuRecord = {
     ...record,
     itemStates: [...record.itemStates.entries()],
+    itemProvenance: [...record.itemProvenance.entries()],
+    itemErrorCodes: [...record.itemErrorCodes.entries()],
+    regenerationCounts: [...record.regenerationCounts.entries()],
   };
   writeFileSync(temporary, JSON.stringify(stored), { mode: 0o600 });
   renameSync(temporary, destination);
@@ -244,4 +552,47 @@ function toDetail(record: FixtureMenuRecord): SafeMenuDetail {
     currentRevision: structuredClone(record.currentRevision),
     generationRevisionId: record.generationRevisionId,
   };
+}
+
+function fixtureQuotaSummary(userId: string, now: Date): QuotaSummary {
+  return summarizeRollingQuota(
+    getAllRecords()
+      .filter((record) => record.userId === userId)
+      .flatMap((record) => record.quotaEntries),
+    now,
+  );
+}
+
+function consumeFixtureReservation(
+  record: FixtureMenuRecord,
+  occurredAt: string,
+) {
+  if (record.providerRequestStarted) return;
+  if (!record.reservationId || !record.userId) {
+    throw new Error("quota_reservation_missing");
+  }
+  record.quotaEntries.push(
+    quotaEntrySchema.parse({
+      id: randomUUID(),
+      userId: record.userId,
+      menuId: record.id,
+      reservationId: record.reservationId,
+      kind: "consumption",
+      amount: 1,
+      businessKey: `menu:${record.id}:consumption`,
+      occurredAt,
+      reasonCode: "first_provider_request",
+    }),
+  );
+  record.providerRequestStarted = true;
+}
+
+function addDays(date: Date, days: number) {
+  const result = new Date(date);
+  result.setUTCDate(result.getUTCDate() + days);
+  return result;
+}
+
+function delay(milliseconds: number) {
+  return new Promise((resolve) => setTimeout(resolve, milliseconds));
 }
