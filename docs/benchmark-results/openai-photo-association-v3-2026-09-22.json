@@ -1,0 +1,136 @@
+{
+  "schemaVersion": "2",
+  "profile": "photo_association",
+  "passed": true,
+  "pricingBasis": "measured_provider_usage",
+  "models": { "text": "gpt-5.6-terra" },
+  "budget": {
+    "maximumUsd": 0.75,
+    "reservedUsd": 0.7,
+    "actualEstimatedCostUsd": 0.041302,
+    "reservationBreached": false
+  },
+  "callCounts": {
+    "extractMenu": 2,
+    "translateMenu": 0,
+    "generateDishImage": 0
+  },
+  "cases": [
+    {
+      "caseId": "synthetic-menu-photo-v3",
+      "passed": true,
+      "checks": [
+        { "name": "source order preserved", "passed": true },
+        { "name": "price text preserved", "passed": true },
+        { "name": "ambiguous price flagged", "passed": true },
+        { "name": "source photo confidently associated", "passed": true },
+        { "name": "source photo suppresses generation", "passed": true },
+        {
+          "name": "text-only item remains generation eligible",
+          "passed": true
+        },
+        { "name": "untrusted instructions absent", "passed": true },
+        {
+          "name": "low confidence never silently accepted",
+          "passed": true
+        }
+      ],
+      "metrics": {
+        "itemCount": 5,
+        "sourcePhotoCandidateCount": 1,
+        "reusableSourcePhotoCount": 1,
+        "generationCandidateCount": 4
+      },
+      "sourcePhotoDiagnostics": {
+        "candidateCount": 1,
+        "reusableCount": 1,
+        "expectedAssociationMatched": true,
+        "expectedReuseReady": true,
+        "reviewCounts": { "region": 0, "association": 0, "usability": 0 },
+        "usabilityStatusCounts": {
+          "usable": 1,
+          "unusable": 0,
+          "uncertain": 0
+        },
+        "minimumConfidence": {
+          "region": 0.99,
+          "association": 0.98,
+          "usability": 0.94
+        },
+        "reasonCodes": []
+      },
+      "stages": [
+        {
+          "provider": "openai",
+          "model": "gpt-5.6-terra",
+          "operation": "extract_menu",
+          "latencyMs": 15816.285667,
+          "estimatedCostUsd": 0.020232,
+          "usage": {
+            "inputTokens": 3108,
+            "outputTokens": 1168,
+            "images": 0
+          }
+        }
+      ]
+    },
+    {
+      "caseId": "synthetic-menu-document-v3",
+      "passed": true,
+      "checks": [
+        { "name": "source order preserved", "passed": true },
+        { "name": "price text preserved", "passed": true },
+        { "name": "ambiguous price flagged", "passed": true },
+        { "name": "source photo confidently associated", "passed": true },
+        { "name": "source photo suppresses generation", "passed": true },
+        {
+          "name": "text-only item remains generation eligible",
+          "passed": true
+        },
+        { "name": "untrusted instructions absent", "passed": true },
+        {
+          "name": "low confidence never silently accepted",
+          "passed": true
+        }
+      ],
+      "metrics": {
+        "itemCount": 5,
+        "sourcePhotoCandidateCount": 1,
+        "reusableSourcePhotoCount": 1,
+        "generationCandidateCount": 4
+      },
+      "sourcePhotoDiagnostics": {
+        "candidateCount": 1,
+        "reusableCount": 1,
+        "expectedAssociationMatched": true,
+        "expectedReuseReady": true,
+        "reviewCounts": { "region": 0, "association": 0, "usability": 0 },
+        "usabilityStatusCounts": {
+          "usable": 1,
+          "unusable": 0,
+          "uncertain": 0
+        },
+        "minimumConfidence": {
+          "region": 0.99,
+          "association": 0.99,
+          "usability": 0.94
+        },
+        "reasonCodes": []
+      },
+      "stages": [
+        {
+          "provider": "openai",
+          "model": "gpt-5.6-terra",
+          "operation": "extract_menu",
+          "latencyMs": 15454.605790999998,
+          "estimatedCostUsd": 0.021070000000000002,
+          "usage": {
+            "inputTokens": 3875,
+            "outputTokens": 1110,
+            "images": 0
+          }
+        }
+      ]
+    }
+  ]
+}

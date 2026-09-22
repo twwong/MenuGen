@@ -1,6 +1,6 @@
 # ADR 0002: OpenAI benchmark profile
 
-- Status: Accepted with one open benchmark gate
+- Status: Accepted
 - Date: 2026-09-22
 - Source: `prd.md` sections 12.3, 12.5, 15, and 16
 
@@ -26,14 +26,16 @@ The 2026-09-22 synthetic PNG/PDF run made the planned six calls for an estimated
 
 Both formats preserved five-item order and exact prices, flagged the ambiguous price, ignored the embedded prompt injection, and left the text-only dish eligible for generation. Low and medium images were both recognizable; low cost `$0.006435` at 9.23 seconds and medium cost `$0.013725` at 11.95 seconds.
 
-Both inputs produced a source-photo candidate, but one photo confidence field remained below the automatic-reuse gate. The adapter correctly refused to reuse it. Milestone 1 therefore remains open for association calibration.
+Both inputs produced a source-photo candidate, but one photo confidence field remained below the automatic-reuse gate. The adapter correctly refused to reuse it, leaving source-photo calibration as the final open gate.
 
 The extraction-only calibration run corrected the misleading two-items-beside-one-image layout. It made two calls for `$0.044950`. The PDF then associated the image with the intended item at `0.98` and located the region at `0.99`, showing that the layout calibration worked. It rated usability `0.62`/`uncertain`, while the PNG returned `no_candidate`. Visual inspection shows the embedded dish is an abstract CSS illustration; the remaining failure is therefore fixture representativeness, not evidence that the reuse threshold should change.
+
+Fixture v3 replaced the illustration with an attributed CC BY dish photograph. Its extraction-only run made two calls with no retries for `$0.041302` and passed both formats. PNG minimum confidence was `0.99` region, `0.98` association, and `0.94` usability; PDF minimum confidence was `0.99`, `0.99`, and `0.94`. Both candidates were reusable without review flags. All source-order, price, ambiguity, prompt-injection, reuse-suppression, and text-only-generation checks passed.
 
 ## Consequences
 
 - Cost is no longer the leading pipeline risk at the measured profile.
 - Low quality is the default candidate, but launch evaluation must still test more cuisines and visual styles.
-- Source-photo reuse needs prompt/schema calibration and more representative fixtures. Lowering the confidence threshold to make the current fixture pass is explicitly rejected.
-- Fixture v3 replaces the abstract image with an attributed CC BY mackerel photograph. Its new hypothesis must be tested with the extraction-only profile before closing Milestone 1.
+- Source-photo reuse cleared the representative PNG/PDF gate without lowering the `0.85` threshold. Broader launch evaluation must still cover more layouts and photographic conditions.
+- Milestone 1 is complete. Milestone 2's creator workflow is next.
 - Current pricing is configuration stamped to this run and must be rechecked before later benchmarks.

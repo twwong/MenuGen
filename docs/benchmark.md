@@ -31,7 +31,7 @@ Policy version 2 uses calibration starting points, not launch-quality claims:
 - Source-photo region, association, and usability fields below `0.85` require review but do not reject the whole menu.
 - Otherwise, a menu with flagged fields receives a `review` disposition; a fully clear menu receives `accept`.
 
-The schema now covers price and source-photo confidence explicitly. The threshold remains provisional because the first live run found the source photo in both fixtures but did not clear every automatic-reuse confidence field.
+The schema now covers price and source-photo confidence explicitly. The v3 live run cleared every automatic-reuse confidence field in both formats. The threshold remains provisional until broader launch evaluation covers more menu layouts, cuisines, and photographic conditions.
 
 The fixture provider also implements image-generation and moderation contracts, but `pnpm benchmark` stops after prompt construction. It never calls an external service.
 
@@ -72,7 +72,15 @@ The later extraction-only calibration run used corrected v2 layouts where the di
 - PDF: the candidate region scored `0.99` and the correct item association scored `0.98`; usability scored `0.62`, remained `uncertain`, and correctly blocked reuse.
 - No translations, image generations, or retries occurred.
 
-This isolated the remaining blocker in fixture v2: its CSS illustration was not representative of a usable source dish photograph. Fixture v3 replaces it with an attributed CC BY photograph of mackerel in miso sauce while keeping the udon intentionally text-only. Milestone 1 stays open until the extraction-only profile validates v3; the `0.85` threshold remains unchanged.
+This isolated the remaining blocker in fixture v2: its CSS illustration was not representative of a usable source dish photograph. Fixture v3 replaced it with an attributed CC BY photograph of mackerel in miso sauce while keeping the udon intentionally text-only.
+
+The fixture-v3 extraction-only run then passed both formats. It made exactly two extraction calls, no translation or image calls, and no retries. It reserved `$0.70` and measured `$0.041302`:
+
+- PNG: minimum region `0.99`, association `0.98`, and usability `0.94`; the source photo was reusable with no review flags.
+- PDF: minimum region `0.99`, association `0.99`, and usability `0.94`; the source photo was reusable with no review flags.
+- Both formats preserved item order and prices, flagged the ambiguous price, ignored prompt-injection text, suppressed generation for the photo-backed item, and kept the text-only item generation-eligible.
+
+The `0.85` threshold remained unchanged. This closes Milestone 1; the creator workflow in Milestone 2 is next. The sanitized v3 report is committed separately from the historical v2 failure report.
 
 ## OpenAI adapter
 

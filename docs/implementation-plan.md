@@ -1,6 +1,6 @@
 # MenuGen Implementation Plan
 
-**Current status:** Pipeline benchmark in progress. Schema v2, deterministic ambiguity coverage, report schema v2, and capped full/extraction-only OpenAI profiles are complete. Fixture v3 replaces the abstract dish graphic with an attributed CC BY photograph; live source-photo validation is still pending.
+**Current status:** Milestone 1 is complete. The v3 PNG/PDF benchmark cleared the unchanged `0.85` source-photo reuse gate while preserving source facts and exposing uncertainty. Milestone 2's creator workflow is next.
 
 ## Goal
 
@@ -61,7 +61,7 @@ The auth, storage, job, email, analytics, and monitoring vendors remain open unt
 
 ## Milestone 1: Pipeline benchmark
 
-**Status:** In progress
+**Status:** Complete (2026-09-22)
 
 ### Deliverables
 
@@ -203,9 +203,9 @@ Record each accepted choice in `docs/decisions/`.
 - [x] Add difficult-input and prompt-injection coverage to a versioned manifest.
 - [x] Define provisional confidence and rejection thresholds.
 - [x] Measure the OpenAI adapter against representative synthetic PNG and PDF files.
-- [ ] Calibrate source-photo association until representative files clear the `0.85` automatic-reuse threshold without weakening uncertainty handling.
+- [x] Calibrate source-photo association until representative files clear the `0.85` automatic-reuse threshold without weakening uncertainty handling.
 
-The 2026-09-22 extraction-only calibration run preserved source facts and correctly associated the PDF candidate at `0.98`, but reported usability `0.62`/`uncertain`; the PNG reported `no_candidate`. Fixture v3 now embeds a verified CC BY mackerel photograph while preserving the unambiguous card layout. Rerun only the extraction profile; do not lower the threshold.
+The fixture-v3 extraction-only run passed both PNG and PDF cases for `$0.041302`. It preserved item order and price text, exposed the ambiguous price, ignored prompt-injection text, reused the confidently associated source photo, and kept the text-only item generation-eligible. Minimum photo confidence was `0.99` region, `0.98` association, and `0.94` usability; no photo review flags were set. The `0.85` threshold was not lowered.
 
 ## Explicitly deferred
 
