@@ -18,6 +18,8 @@ const creatorEnvironmentSchema = z
     TRANSLOADIT_SECRET: z.string().min(1).optional(),
     UPSTASH_REDIS_REST_URL: z.string().url().optional(),
     UPSTASH_REDIS_REST_TOKEN: z.string().min(1).optional(),
+    KV_REST_API_URL: z.string().url().optional(),
+    KV_REST_API_TOKEN: z.string().min(1).optional(),
     RESEND_API_KEY: z.string().min(1).optional(),
     RESEND_FROM_EMAIL: z.string().email().optional(),
     OPENAI_API_KEY: z.string().min(1).optional(),
@@ -47,8 +49,6 @@ const creatorEnvironmentSchema = z
       "RESULT_BLOB_READ_WRITE_TOKEN",
       "TRANSLOADIT_KEY",
       "TRANSLOADIT_SECRET",
-      "UPSTASH_REDIS_REST_URL",
-      "UPSTASH_REDIS_REST_TOKEN",
       "RESEND_API_KEY",
       "RESEND_FROM_EMAIL",
       "OPENAI_API_KEY",
@@ -62,6 +62,24 @@ const creatorEnvironmentSchema = z
           path: [key],
         });
       }
+    }
+    if (!(environment.UPSTASH_REDIS_REST_URL ?? environment.KV_REST_API_URL)) {
+      context.addIssue({
+        code: "custom",
+        message:
+          "UPSTASH_REDIS_REST_URL or KV_REST_API_URL is required when the creator workflow is enabled",
+        path: ["UPSTASH_REDIS_REST_URL"],
+      });
+    }
+    if (!(
+      environment.UPSTASH_REDIS_REST_TOKEN ?? environment.KV_REST_API_TOKEN
+    )) {
+      context.addIssue({
+        code: "custom",
+        message:
+          "UPSTASH_REDIS_REST_TOKEN or KV_REST_API_TOKEN is required when the creator workflow is enabled",
+        path: ["UPSTASH_REDIS_REST_TOKEN"],
+      });
     }
     if (
       environment.GENERATION_COST_WARNING_USD >=

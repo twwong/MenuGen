@@ -176,9 +176,12 @@ export async function beginManagedUploadAction(input: unknown) {
     });
   }
   const limiter = new UpstashAnonymousRateLimiter({
-    url: required(environment.UPSTASH_REDIS_REST_URL, "upstash_url_missing"),
+    url: required(
+      environment.UPSTASH_REDIS_REST_URL ?? environment.KV_REST_API_URL,
+      "upstash_url_missing",
+    ),
     token: required(
-      environment.UPSTASH_REDIS_REST_TOKEN,
+      environment.UPSTASH_REDIS_REST_TOKEN ?? environment.KV_REST_API_TOKEN,
       "upstash_token_missing",
     ),
   });

@@ -14,7 +14,7 @@ offers a region choice. Never print, commit, or copy secret values into reports.
 2. [x] Create the Singapore Neon project and apply committed Drizzle migrations.
 3. [x] Create separate private Vercel Blob stores for sources and results.
 4. [x] Provision Transloadit signed uploads and normalization with one-day Assembly retention.
-5. Create the Singapore Upstash Redis database.
+5. [x] Create the Singapore Upstash Redis database.
 6. Configure Resend's development sender.
 7. Configure the Vercel protected-preview project and Vercel Workflow.
 8. Add the existing OpenAI project key and project-side spend limit.
@@ -52,6 +52,16 @@ store and, according to the provider's current retention documentation, are
 automatically removed after 24 hours. A credential exchange passed without
 printing secrets; real upload, malware, callback, and normalization behavior
 still need protected-preview verification.
+
+Upstash Redis was provisioned on 2026-09-22 as
+`menugen-dev-rate-limits` on the free plan with Singapore (`sin1`) as its
+primary region, no extra read regions, and eviction disabled. It is connected
+to `menugen` for Development and Preview only; Production is untouched. Vercel
+injects the standard `KV_REST_API_URL` and `KV_REST_API_TOKEN` names, while the
+app also keeps the direct-Upstash names as a backward-compatible local option.
+The resource reports available, a safe-mode `PING` returned `PONG`, and the
+connection scope is verified. Live IP/device rate-limit behavior still needs
+protected-preview verification.
 
 The environment key names are documented in `.env.example`. Validate presence,
 not values. Keep `CREATOR_WORKFLOW_ENABLED=false` in public production.
