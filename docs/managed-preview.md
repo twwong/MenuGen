@@ -16,19 +16,20 @@ offers a region choice. Never print, commit, or copy secret values into reports.
 4. [x] Provision Transloadit signed uploads and normalization with one-day Assembly retention.
 5. [x] Create the Singapore Upstash Redis database.
 6. [x] Configure Resend's development sender.
-7. Configure the Vercel protected-preview project and Vercel Workflow.
+7. [x] Configure the Vercel protected-preview project and Vercel Workflow.
 8. Add the existing OpenAI project key and project-side spend limit.
 
 Clerk was provisioned on 2026-09-22 as the `MenuGen` development application.
 Email verification codes are enabled for sign-up and sign-in, and Google uses
 Clerk's shared development credentials. Its keys exist only in the ignored local
-environment file; they are not recorded in documentation or Git.
+environment file and Vercel's pre-production environment settings; they are not
+recorded in documentation or Git.
 
 Neon was provisioned on 2026-09-22 in AWS Singapore as `MenuGen Development`.
 Drizzle applied all three committed migrations to the development database;
 verification found 12 application tables plus the Drizzle migration journal.
 The privileged connection string exists only in the ignored local environment
-file.
+file and Vercel's pre-production Secret settings.
 
 Vercel Blob was provisioned on 2026-09-22 as two private Singapore (`sin1`)
 stores: `menugen-source-assets-dev` and `menugen-result-assets-dev`. Both are
@@ -74,6 +75,25 @@ before send with sanitized reason `validation_error`; it was not retried, and
 its disposable key was revoked. End-to-end completion delivery therefore stays
 in the protected-preview acceptance matrix. Production also still needs a
 verified sending domain.
+
+Vercel was connected to `twwong/MenuGen` through a GitHub App installation
+scoped to that repository. The `codex/protected-preview` branch deploys as a
+Preview environment under Standard Vercel Authentication. An unauthenticated
+request redirects to Vercel SSO and returns `noindex`; the first ready remote
+build compiled nineteen steps across seven workflows. The managed database,
+Clerk, draft-cookie signing, storage, Transloadit, Upstash, and Resend settings
+are available only to Development and Preview. The stable callback origin is
+scoped more narrowly to the protected-preview branch. Production receives none
+of those credentials, and `CREATOR_WORKFLOW_ENABLED` remains `false`, so no
+upload, workflow run, email, or paid provider call was started during
+provisioning.
+
+Vercel Workflow itself needs no project-side resource setup after deployment:
+Vercel supplies its managed storage, queue, authentication, and environment
+isolation. Its current managed backend stores Workflow data in `iad1`, not
+Singapore. This is an explicit development-preview residency exception and
+must be reassessed before production rather than being described as
+Singapore-resident.
 
 The environment key names are documented in `.env.example`. Validate presence,
 not values. Keep `CREATOR_WORKFLOW_ENABLED=false` in public production.
