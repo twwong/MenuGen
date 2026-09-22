@@ -22,8 +22,11 @@ pnpm format:check
 pnpm lint
 pnpm typecheck
 pnpm test
+pnpm benchmark
 pnpm build
 ```
+
+`pnpm benchmark` runs the deterministic synthetic menu pipeline and prints a content-free quality and cost report. Its pricing numbers are fixture assumptions until the OpenAI adapter is measured.
 
 Run the browser baseline after installing Playwright browsers:
 
@@ -37,4 +40,5 @@ pnpm test:e2e
 - `prd.md`: Product requirements and non-negotiable behavior
 - `AGENTS.md`: Repository guidance for coding agents
 - `docs/implementation-plan.md`: Milestones and initial backlog
+- `docs/benchmark.md`: Benchmark structure, guarantees, and limitations
 - `docs/decisions/`: Architecture decision records

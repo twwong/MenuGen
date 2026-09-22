@@ -101,6 +101,7 @@ Before finishing:
 - Run unit tests: `pnpm test`
 - Run one unit test: `pnpm test -- path/to/file.test.ts`
 - Run browser tests: `pnpm test:e2e`
+- Run the deterministic pipeline benchmark: `pnpm benchmark`
 - Run the local quality gate: `pnpm check`
 - Build: `pnpm build`
 
@@ -111,6 +112,10 @@ Database commands will be added with the database tooling. Never guess commands 
 - `src/app/`: Next.js routes, layouts, and route handlers
 - `src/config/`: Validated environment configuration
 - `src/domain/`: Framework-independent product rules and schemas
+- `src/pipeline/`: Provider-independent menu processing
+- `src/providers/`: External-service contracts and adapters
+- `src/benchmark/`: Benchmark runner and report types
+- `tests/fixtures/`: Synthetic or properly licensed benchmark inputs
 - `tests/e2e/`: Playwright browser acceptance tests
 - `docs/`: Implementation plan and architecture decisions
 - `public/`: Static assets

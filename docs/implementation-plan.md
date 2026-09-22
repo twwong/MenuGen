@@ -61,7 +61,7 @@ The auth, storage, job, email, analytics, and monitoring vendors remain open unt
 
 ## Milestone 1: Pipeline benchmark
 
-**Status:** Next
+**Status:** In progress
 
 ### Deliverables
 
@@ -195,9 +195,9 @@ Record each accepted choice in `docs/decisions/`.
 - [x] Scaffold the Next.js application with TypeScript and `pnpm`.
 - [x] Add formatting, tests, environment validation, and CI.
 - [x] Define the first versioned menu-extraction schema.
-- [ ] Implement fixture-backed provider interfaces.
-- [ ] Add one synthetic bilingual menu benchmark case.
-- [ ] Build the benchmark runner and cost-report format.
+- [x] Implement fixture-backed provider interfaces.
+- [x] Add one synthetic bilingual menu benchmark case.
+- [x] Build the benchmark runner and cost-report format.
 - [ ] Add the OpenAI adapter only after the deterministic pipeline passes locally.
 
 ## Explicitly deferred

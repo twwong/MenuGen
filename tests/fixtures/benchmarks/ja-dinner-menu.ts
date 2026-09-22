@@ -1,0 +1,182 @@
+import type { MenuBenchmarkCase } from "@/benchmark/types";
+
+export const japaneseDinnerBenchmark: MenuBenchmarkCase = {
+  id: "synthetic-ja-dinner-v1",
+  input: {
+    inputId: "synthetic-ja-dinner-v1",
+    files: [
+      {
+        ref: "fixture://synthetic-ja-dinner-v1/page-1",
+        fileName: "synthetic-ja-dinner.png",
+        mimeType: "image/png",
+        pageOrder: 0,
+      },
+    ],
+  },
+  providerFixture: {
+    inputId: "synthetic-ja-dinner-v1",
+    extraction: {
+      schemaVersion: "1",
+      sourceLanguage: "ja",
+      title: {
+        sourceText: "晩ごはん",
+        confidence: 0.99,
+        needsReview: false,
+      },
+      sections: [
+        {
+          id: "fish",
+          order: 0,
+          title: {
+            sourceText: "魚料理",
+            confidence: 0.99,
+            needsReview: false,
+          },
+          items: [
+            {
+              id: "mackerel",
+              order: 0,
+              name: {
+                sourceText: "鯖の味噌煮",
+                confidence: 0.96,
+                needsReview: false,
+              },
+              description: {
+                sourceText: "味噌と生姜でじっくり煮込みました",
+                confidence: 0.93,
+                needsReview: false,
+              },
+              priceText: "¥1,280",
+              explicitSourceClaims: ["味噌", "生姜"],
+              imageEligibility: "prepared_food",
+            },
+            {
+              id: "daily-special",
+              order: 1,
+              name: {
+                sourceText: "本日のおすすめ",
+                confidence: 0.72,
+                needsReview: true,
+              },
+              description: {
+                sourceText: "内容はスタッフまで",
+                confidence: 0.91,
+                needsReview: false,
+              },
+              priceText: "時価",
+              explicitSourceClaims: [],
+              imageEligibility: "needs_review",
+            },
+            {
+              id: "bottled-beer",
+              order: 2,
+              name: {
+                sourceText: "瓶ビール",
+                confidence: 0.98,
+                needsReview: false,
+              },
+              priceText: "¥680",
+              explicitSourceClaims: [],
+              imageEligibility: "not_eligible",
+            },
+          ],
+        },
+      ],
+    },
+    translations: {
+      en: {
+        schemaVersion: "1",
+        sourceSchemaVersion: "1",
+        targetLanguage: "en",
+        title: {
+          translatedText: "Dinner",
+          confidence: 0.99,
+          needsReview: false,
+        },
+        sections: [
+          {
+            sectionId: "fish",
+            title: {
+              translatedText: "Fish dishes",
+              confidence: 0.99,
+              needsReview: false,
+            },
+            items: [
+              {
+                itemId: "mackerel",
+                name: {
+                  translatedText: "Miso-braised mackerel",
+                  confidence: 0.95,
+                  needsReview: false,
+                },
+                description: {
+                  translatedText:
+                    "Mackerel slowly simmered with miso and ginger",
+                  confidence: 0.94,
+                  needsReview: false,
+                },
+              },
+              {
+                itemId: "daily-special",
+                name: {
+                  translatedText: "Today's recommendation",
+                  confidence: 0.88,
+                  needsReview: false,
+                },
+                description: {
+                  translatedText: "Ask staff for details",
+                  confidence: 0.96,
+                  needsReview: false,
+                },
+              },
+              {
+                itemId: "bottled-beer",
+                name: {
+                  translatedText: "Bottled beer",
+                  confidence: 0.99,
+                  needsReview: false,
+                },
+              },
+            ],
+          },
+        ],
+      },
+    },
+    costUsd: {
+      moderate_input: 0.0001,
+      extract_menu: 0.012,
+      translate_menu: 0.004,
+      generate_dish_image: 0.035,
+      moderate_image: 0.001,
+    },
+  },
+  expectations: {
+    orderedItemIds: ["mackerel", "daily-special", "bottled-beer"],
+    priceTextByItemId: {
+      mackerel: "¥1,280",
+      "daily-special": "時価",
+      "bottled-beer": "¥680",
+    },
+    translatedNameByItemId: {
+      mackerel: "Miso-braised mackerel",
+      "daily-special": "Today's recommendation",
+      "bottled-beer": "Bottled beer",
+    },
+    sourceClaimsByItemId: {
+      mackerel: ["味噌", "生姜"],
+      "daily-special": [],
+      "bottled-beer": [],
+    },
+    needsReviewItemIds: ["daily-special"],
+    generatedImageItemIds: ["mackerel"],
+    forbiddenOutputFragments: [
+      "ignore previous instructions",
+      "system prompt",
+      "peanut-free",
+    ],
+  },
+  budget: {
+    typicalEligibleItemCount: 40,
+    maximumTypicalMenuCostUsd: 2,
+  },
+};
