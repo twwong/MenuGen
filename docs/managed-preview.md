@@ -17,7 +17,18 @@ offers a region choice. Never print, commit, or copy secret values into reports.
 5. [x] Create the Singapore Upstash Redis database.
 6. [x] Configure Resend's development sender.
 7. [x] Configure the Vercel protected-preview project and Vercel Workflow.
-8. Add the existing OpenAI project key and project-side spend limit.
+8. Add the OpenAI project key and project-side spend limit. **Blocked:** the
+   personal OpenAI organization needs API billing or credits first.
+
+The isolated `MenuGen Preview` OpenAI project was created on 2026-09-22 under
+the personal organization rather than the unrelated Twilio organization. That
+personal organization has no API billing or credits, so OpenAI does not expose
+project spend-limit controls. Provisioning stopped there by user choice. No API
+key was created or transferred, no model allowlist was saved, no Vercel OpenAI
+secret was added, and no provider request or charge occurred. Resume only after
+the user explicitly enables personal API billing or supplies another funded
+OpenAI organization they control; do not fall back to the Twilio organization
+or the unidentified shell key.
 
 Clerk was provisioned on 2026-09-22 as the `MenuGen` development application.
 Email verification codes are enabled for sign-up and sign-in, and Google uses
