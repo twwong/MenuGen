@@ -1,6 +1,6 @@
 # MenuGen Implementation Plan
 
-**Current status:** Repository foundation complete. Pipeline benchmark is next.
+**Current status:** Pipeline benchmark in progress. The deterministic path and initial OpenAI adapter are complete.
 
 ## Goal
 
@@ -198,7 +198,7 @@ Record each accepted choice in `docs/decisions/`.
 - [x] Implement fixture-backed provider interfaces.
 - [x] Add one synthetic bilingual menu benchmark case.
 - [x] Build the benchmark runner and cost-report format.
-- [ ] Add the OpenAI adapter only after the deterministic pipeline passes locally.
+- [x] Add the OpenAI adapter only after the deterministic pipeline passes locally.
 
 ## Explicitly deferred
 

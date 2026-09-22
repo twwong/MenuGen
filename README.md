@@ -2,7 +2,7 @@
 
 MenuGen turns menu photos or PDFs into translated, mobile-friendly visual menus while preserving source text, prices, uncertainty, and image provenance.
 
-The application foundation is complete. The next milestone is a deterministic extraction benchmark that proves quality and cost before live AI integration. See `prd.md` for the product requirements and `docs/implementation-plan.md` for delivery order.
+The pipeline benchmark milestone is in progress. The deterministic fixture path passes locally, and an OpenAI adapter is available for the later live benchmark without coupling provider types to the domain model. See `prd.md` for the product requirements and `docs/implementation-plan.md` for delivery order.
 
 ## Local development
 
