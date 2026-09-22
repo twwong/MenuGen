@@ -4,7 +4,7 @@
 
 MenuGen turns menu photos or PDFs into translated, mobile-friendly visual menus.
 
-The repository is in the pipeline-benchmark stage. Read `prd.md` before making architectural, product, data-model, or UX decisions. Treat it as the source of truth.
+The repository is in the creator-workflow stage. Read `prd.md` before making architectural, product, data-model, or UX decisions. Treat it as the source of truth.
 
 Read `docs/implementation-plan.md` for delivery order and `docs/decisions/` for accepted architecture decisions.
 
@@ -101,19 +101,24 @@ Before finishing:
 - Run unit tests: `pnpm test`
 - Run one unit test: `pnpm test -- path/to/file.test.ts`
 - Run browser tests: `pnpm test:e2e`
+- Generate database migrations: `pnpm db:generate`
+- Apply database migrations: `pnpm db:migrate`
+- Open Drizzle Studio: `pnpm db:studio`
 - Run the deterministic pipeline benchmark: `pnpm benchmark`
 - Regenerate live benchmark fixtures: `pnpm fixtures:live`
 - Run the opt-in live benchmark: `pnpm benchmark:live -- --confirm-spend --max-usd 2`
 - Run the local quality gate: `pnpm check`
 - Build: `pnpm build`
 
-Database commands will be added with the database tooling. Never guess commands that are not present in `package.json`.
+Database commands require an explicit `DATABASE_URL`. Never run migrations against production while developing or testing.
 
 ## Repository layout
 
 - `src/app/`: Next.js routes, layouts, and route handlers
 - `src/config/`: Validated environment configuration
+- `src/application/`: Use cases, safe DTOs, and provider-independent service contracts
 - `src/domain/`: Framework-independent product rules and schemas
+- `src/infrastructure/`: Database schema, migrations, and managed-service plumbing
 - `src/pipeline/`: Provider-independent menu processing
 - `src/providers/`: External-service contracts and adapters
 - `src/benchmark/`: Benchmark runner and report types

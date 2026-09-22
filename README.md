@@ -2,7 +2,7 @@
 
 MenuGen turns menu photos or PDFs into translated, mobile-friendly visual menus while preserving source text, prices, uncertainty, and image provenance.
 
-The pipeline benchmark milestone is in progress. The deterministic schema-v2 manifest passes locally, and the OpenAI adapter has been measured against synthetic PNG and PDF sources. Cost and core extraction checks passed; source-photo auto-reuse still needs calibration. See `prd.md` for the product requirements and `docs/implementation-plan.md` for delivery order.
+Milestone 1 is complete. Milestone 2 is in progress, starting with versioned creator-domain rules, Drizzle persistence, and provider interfaces. The creator workflow remains disabled in public production until the protected preview passes acceptance testing. See `prd.md` for the product requirements and `docs/implementation-plan.md` for delivery order.
 
 ## Local development
 
@@ -25,6 +25,17 @@ pnpm test
 pnpm benchmark
 pnpm build
 ```
+
+Generate a migration after changing the Drizzle schema, then apply committed
+migrations to an explicitly selected development database:
+
+```bash
+pnpm db:generate
+pnpm db:migrate
+```
+
+Both commands require `DATABASE_URL`. Never point local migration work at a
+production database.
 
 `pnpm benchmark` runs the deterministic synthetic manifest and prints a content-free quality and cost report. Its pricing numbers remain fixture assumptions; the measured provider result is documented separately in `docs/benchmark.md`.
 

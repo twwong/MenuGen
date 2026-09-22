@@ -1,6 +1,6 @@
 # MenuGen Implementation Plan
 
-**Current status:** Milestone 1 is complete. The v3 PNG/PDF benchmark cleared the unchanged `0.85` source-photo reuse gate while preserving source facts and exposing uncertainty. Milestone 2's creator workflow is next.
+**Current status:** Milestone 1 is complete. Milestone 2 is in progress. The local foundation slice now has strict creator schemas, state transitions, immutable revision snapshots, upload validation, Drizzle migrations, a server-only Neon repository, and gated provider adapters. No external development resource has been provisioned yet.
 
 ## Goal
 
@@ -99,6 +99,8 @@ The first slice may use fixture files instead of uploads, authentication, persis
 
 ## Milestone 2: Creator workflow
 
+**Status:** In progress (foundation slice implemented locally; external provisioning pending approval)
+
 ### Deliverables
 
 - Signed uploads and server-side file validation
@@ -118,6 +120,14 @@ The first slice may use fixture files instead of uploads, authentication, persis
 - Duplicate delivery cannot double-consume quota or duplicate generation attempts.
 - One item failure cannot fail the menu.
 - Original sources are deleted within the required deadline.
+
+### Vertical slices
+
+- [x] Foundation: domain schemas, state rules, Drizzle schema/migrations, safe DAL contracts, provider interfaces, and managed-stack ADRs.
+- [ ] Upload and review: signed scanning upload, preflight, extraction, crops, immutable corrections, and verified source deletion.
+- [ ] Authentication and generation: Clerk claim flow, atomic quota ledger, durable fan-out, retries, and regeneration.
+- [ ] Resume and lifecycle: dashboard, polling, email outbox, deletion, expiry, and content-free telemetry.
+- [ ] Closure: protected-preview acceptance, manual live smoke tests, final documentation, and milestone sign-off.
 
 ## Milestone 3: Publication and operations
 

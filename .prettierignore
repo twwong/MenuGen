@@ -1,4 +1,5 @@
 .next
+src/app/.well-known/workflow
 coverage
 node_modules
 playwright-report
