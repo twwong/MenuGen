@@ -45,12 +45,12 @@ export default function Home() {
           <div className="mt-9 flex flex-wrap items-center gap-5">
             <a
               className="bg-shiso text-rice-paper hover:bg-shiso-dark focus-visible:outline-shiso inline-flex min-h-12 items-center justify-center px-6 py-3 font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-4"
-              href="#preview"
+              href="/create"
             >
-              See an example
+              Create a visual menu
             </a>
             <span className="text-ink-muted max-w-52 text-sm leading-6">
-              Uploads will open after the extraction benchmark is ready.
+              Private creator preview. Source files are temporary.
             </span>
           </div>
         </div>
@@ -124,8 +124,9 @@ export default function Home() {
                 From menu photo to something you can actually use.
               </h2>
               <p className="text-ink-muted mt-5 max-w-md leading-7">
-                The first working milestone is the extraction benchmark. It has
-                to prove accuracy, uncertainty, and cost before uploads go live.
+                The extraction benchmark is complete. The private creator flow
+                now focuses your attention on uncertain details before any
+                images are generated.
               </p>
             </div>
             <ol className="border-ink/30 border-t">

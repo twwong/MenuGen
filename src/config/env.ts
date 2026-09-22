@@ -8,6 +8,7 @@ const environmentSchema = z.object({
 const creatorEnvironmentSchema = z
   .object({
     CREATOR_WORKFLOW_ENABLED: z.enum(["true", "false"]).default("false"),
+    CREATOR_BACKEND: z.enum(["fixture", "managed"]).default("fixture"),
     DATABASE_URL: z.string().url().optional(),
     CLERK_SECRET_KEY: z.string().min(1).optional(),
     NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: z.string().min(1).optional(),
@@ -33,7 +34,11 @@ const creatorEnvironmentSchema = z
       .default(2),
   })
   .superRefine((environment, context) => {
-    if (environment.CREATOR_WORKFLOW_ENABLED !== "true") return;
+    if (
+      environment.CREATOR_WORKFLOW_ENABLED !== "true" ||
+      environment.CREATOR_BACKEND !== "managed"
+    )
+      return;
     const requiredKeys = [
       "DATABASE_URL",
       "CLERK_SECRET_KEY",

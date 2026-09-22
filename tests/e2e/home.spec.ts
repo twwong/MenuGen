@@ -20,8 +20,10 @@ test("explains the product and labels the example estimate", async ({
   ).toBeVisible();
   await expect(page.getByText("AI visual estimate")).toBeVisible();
   await expect(page.getByText("鯖の味噌煮")).toBeVisible();
-  await page.getByRole("link", { name: "See an example" }).click();
-  await expect(page.locator("#preview")).toBeInViewport();
+  await page.getByRole("link", { name: "Create a visual menu" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Bring the whole menu into view." }),
+  ).toBeVisible();
   await expect(page.locator("[data-nextjs-dialog]")).toHaveCount(0);
   expect(consoleErrors).toEqual([]);
 });

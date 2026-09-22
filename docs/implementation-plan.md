@@ -1,6 +1,6 @@
 # MenuGen Implementation Plan
 
-**Current status:** Milestone 1 is complete. Milestone 2 is in progress. The local foundation slice now has strict creator schemas, state transitions, immutable revision snapshots, upload validation, Drizzle migrations, a server-only Neon repository, and gated provider adapters. No external development resource has been provisioned yet.
+**Current status:** Milestone 1 is complete. Milestone 2 is in progress. The foundation and deterministic upload/review proof are implemented: a user can select and reorder pages, see byte progress, resume a private synthetic draft, correct uncertain prices, explicitly leave ambiguous photos unassociated, and advance an immutable revision. Mobile Chrome/Safari and automated WCAG checks pass. Managed ingestion, auth, generation, lifecycle work, and all external provisioning remain open.
 
 ## Goal
 
@@ -124,7 +124,7 @@ The first slice may use fixture files instead of uploads, authentication, persis
 ### Vertical slices
 
 - [x] Foundation: domain schemas, state rules, Drizzle schema/migrations, safe DAL contracts, provider interfaces, and managed-stack ADRs.
-- [ ] Upload and review: signed scanning upload, preflight, extraction, crops, immutable corrections, and verified source deletion.
+- [ ] Upload and review: the fixture-backed UI, immutable corrections, strict local validation, crop-before-delete ordering, signed Transloadit adapter, and callback verification are complete. Managed callback persistence, preflight execution, and verified remote source deletion remain.
 - [ ] Authentication and generation: Clerk claim flow, atomic quota ledger, durable fan-out, retries, and regeneration.
 - [ ] Resume and lifecycle: dashboard, polling, email outbox, deletion, expiry, and content-free telemetry.
 - [ ] Closure: protected-preview acceptance, manual live smoke tests, final documentation, and milestone sign-off.

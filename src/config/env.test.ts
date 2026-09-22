@@ -28,6 +28,7 @@ describe("readCreatorEnvironment", () => {
   it("keeps the creator workflow off without external credentials", () => {
     expect(readCreatorEnvironment({})).toMatchObject({
       CREATOR_WORKFLOW_ENABLED: "false",
+      CREATOR_BACKEND: "fixture",
       GENERATION_CONCURRENCY: 4,
       GENERATION_MAX_RETRIES: 2,
       GENERATION_COST_WARNING_USD: 1.5,
@@ -37,7 +38,10 @@ describe("readCreatorEnvironment", () => {
 
   it("requires every managed-service credential before enabling the workflow", () => {
     expect(() =>
-      readCreatorEnvironment({ CREATOR_WORKFLOW_ENABLED: "true" }),
+      readCreatorEnvironment({
+        CREATOR_WORKFLOW_ENABLED: "true",
+        CREATOR_BACKEND: "managed",
+      }),
     ).toThrow();
   });
 

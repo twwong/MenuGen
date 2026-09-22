@@ -15,6 +15,17 @@ pnpm dev
 
 Open <http://localhost:3000>.
 
+The creator route is dark by default. Run the deterministic local preview
+without external services or paid calls with:
+
+```bash
+CREATOR_WORKFLOW_ENABLED=true CREATOR_BACKEND=fixture pnpm dev
+```
+
+The fixture backend stores synthetic draft state in a private temporary
+directory so navigation and browser reloads work. It is never used when
+`CREATOR_BACKEND=managed`.
+
 ## Checks
 
 ```bash

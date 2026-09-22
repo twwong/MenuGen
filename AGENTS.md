@@ -115,6 +115,7 @@ Database commands require an explicit `DATABASE_URL`. Never run migrations again
 ## Repository layout
 
 - `src/app/`: Next.js routes, layouts, and route handlers
+- `src/app/create/`: Private creator upload, processing, review, and generation states
 - `src/config/`: Validated environment configuration
 - `src/application/`: Use cases, safe DTOs, and provider-independent service contracts
 - `src/domain/`: Framework-independent product rules and schemas
