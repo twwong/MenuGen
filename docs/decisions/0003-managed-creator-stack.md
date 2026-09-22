@@ -21,7 +21,7 @@ Milestone 2 needs private uploads, durable processing, authentication, rate limi
 
 All adapters are feature-gated. No account or remote resource is created by committing this decision; provisioning needs explicit approval for each external action.
 
-The local implementation now has concrete adapters and workflow entry points for every selected service. The Clerk development application was provisioned on 2026-09-22 with email-code sign-up/sign-in and Google using Clerk's shared development credentials. Other vendor configuration and regional placement remain protected-preview checks.
+The local implementation now has concrete adapters and workflow entry points for every selected service. The Clerk development application was provisioned on 2026-09-22 with email-code sign-up/sign-in and Google using Clerk's shared development credentials. The Neon development project was provisioned in AWS Singapore on the same date. Other vendor configuration and regional placement remain protected-preview checks.
 
 ## Consequences
 

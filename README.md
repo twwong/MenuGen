@@ -2,7 +2,7 @@
 
 MenuGen turns menu photos or PDFs into translated, mobile-friendly visual menus while preserving source text, prices, uncertainty, and image provenance.
 
-Milestone 1 is complete. Milestone 2 is in progress. The deterministic creator proof covers the full private journey. The managed path is also wired for Clerk, Neon, private Blob stores, Transloadit, Vercel Workflow, Upstash, Resend, and OpenAI. The Clerk development application is provisioned with email-code and Google sign-in; the remaining managed services and the protected preview are still pending. The creator workflow remains disabled in public production until that preview passes acceptance testing. See `prd.md` for the product requirements and `docs/implementation-plan.md` for delivery order.
+Milestone 1 is complete. Milestone 2 is in progress. The deterministic creator proof covers the full private journey. The managed path is also wired for Clerk, Neon, private Blob stores, Transloadit, Vercel Workflow, Upstash, Resend, and OpenAI. The Clerk development application and Singapore Neon development database are provisioned; the committed schema is applied. The remaining managed services and protected preview are still pending. The creator workflow remains disabled in public production until that preview passes acceptance testing. See `prd.md` for the product requirements and `docs/implementation-plan.md` for delivery order.
 
 ## Local development
 

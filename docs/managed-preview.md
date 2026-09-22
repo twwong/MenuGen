@@ -11,7 +11,7 @@ offers a region choice. Never print, commit, or copy secret values into reports.
 ## Provisioning order
 
 1. [x] Create the Clerk development application with email codes and Google sign-in.
-2. Create the Singapore Neon project and apply committed Drizzle migrations.
+2. [x] Create the Singapore Neon project and apply committed Drizzle migrations.
 3. Create separate private Vercel Blob stores for sources and results.
 4. Create the Transloadit template and callback credentials with one-day Assembly retention.
 5. Create the Singapore Upstash Redis database.
@@ -23,6 +23,12 @@ Clerk was provisioned on 2026-09-22 as the `MenuGen` development application.
 Email verification codes are enabled for sign-up and sign-in, and Google uses
 Clerk's shared development credentials. Its keys exist only in the ignored local
 environment file; they are not recorded in documentation or Git.
+
+Neon was provisioned on 2026-09-22 in AWS Singapore as `MenuGen Development`.
+Drizzle applied all three committed migrations to the development database;
+verification found 12 application tables plus the Drizzle migration journal.
+The privileged connection string exists only in the ignored local environment
+file.
 
 The environment key names are documented in `.env.example`. Validate presence,
 not values. Keep `CREATOR_WORKFLOW_ENABLED=false` in public production.
